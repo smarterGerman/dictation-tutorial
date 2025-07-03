@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>German Dictation Tutorial</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        /* Simple, reliable tutorial styles */
+        .tutorial-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .tutorial-overlay.show {
+            opacity: 1;
+        }
+
+        .tutorial-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 320px;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(12px);
+            border-radius: 16px;
+            padding: 1.5rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            pointer-events: auto;
+            z-index: 10001;
+            transform: translateX(100%);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .tutorial-panel.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        .tutorial-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #1f2937;
+            margin-bottom: 0.5rem;
+        }
+
+        .tutorial-content {
+            color: #4b5563;
+            line-height: 1.5;
+            margin-bottom: 1rem;
+        }
+
+        .tutorial-progress {
+            display: flex;
+            gap: 4px;
+            margin-bottom: 1rem;
+        }
+
+        .progress-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #d1d5db;
+            transition: all 0.2s;
+        }
+
+        .progress-dot.active {
+            background: #a855f7;
+        }
+
+        .progress-dot.completed {
+            background: #10b981;
+        }
+
+        .tutorial-buttons {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: space-between;
+        }
+
+        .tutorial-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .tutorial-btn-primary {
+            background: #a855f7;
+            color: white;
+        }
+
+        .tutorial-btn-primary:hover {
+            background: #9333ea;
+        }
+
+        .tutorial-btn-secondary {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+
+        .tutorial-btn-secondary:hover {
+            background: #e5e7eb;
+        }
+
+        /* Simple highlight - just a glow */
+        .tutorial-highlight {
+            position: relative;
+            z-index: 10002 !important;
+            box-shadow: 0 0 0 3px #a855f7, 0 0 20px rgba(168, 85, 247, 0.5) !important;
+            border-radius: inherit !important;
+            animation: tutorialGlow 2s infinite;
+        }
+
+        @keyframes tutorialGlow {
+            0%, 100% { 
+                box-shadow: 0 0 0 3px #a855f7, 0 0 20px rgba(168, 85, 247, 0.5);
+            }
+            50% { 
+                box-shadow: 0 0 0 3px #a855f7, 0 0 30px rgba(168, 85, 247, 0.8);
+            }
+        }
+
+        .tutorial-success {
+            background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%);
+            border: 1px solid #bbf7d0;
+            border-radius: 8px;
+            padding: 0.75rem;
+            text-align: center;
+            color: #10b981;
+            font-weight: 600;
+            margin: 0.5rem 0;
+        }
+
+        /* Enhanced success checkmark - SVG-based for consistent rendering */
+        #tutorialSuccess {
+            position: absolute;
+            z-index: 1003;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            background: rgba(255, 255, 255, 0.98);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            min-width: 40px;
+            min-height: 40px;
+            max-width: 40px;
+            max-height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(8px);
+            border: 3px solid #10b981;
+            box-shadow: 
+                0 0 20px rgba(16, 185, 129, 0.6),
+                0 0 40px rgba(16, 185, 129, 0.3),
+                0 4px 20px rgba(0, 0, 0, 0.2);
+            transform: translateZ(0);
+            will-change: opacity;
+            aspect-ratio: 1 / 1;
+            box-sizing: border-box;
+        }
+
+        #tutorialSuccess svg {
+            width: 20px;
+            height: 20px;
+            fill: #10b981;
+        }
+
+        #tutorialSuccess.show {
+            opacity: 1;
+        }
+
+        /* Add purple tutorial highlight to checkmark when it has the class */
+        #tutorialSuccess.tutorial-highlight {
+            box-shadow: 
+                0 0 0 3px #a855f7, 
+                0 0 20px rgba(168, 85, 247, 0.5),
+                0 0 30px rgba(16, 185, 129, 0.6),
+                0 0 50px rgba(16, 185, 129, 0.3),
+                0 4px 20px rgba(0, 0, 0, 0.2) !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="content">
+            <!-- AUDIO SECTION -->
+            <div class="audio-section">
+                <div class="audio-controls">
+                    <div class="player-pill">
+                        <button class="nav-btn" id="prevBtn" title="Previous sentence">‹</button>
+                        <button class="play-btn" id="playBtn" title="Play/Pause"></button>
+                        <button class="nav-btn" id="nextBtn" title="Next sentence">›</button>
+                        <button class="toggle-btn" id="ignoreCaseBtn" title="Capitalization checking">Aa</button>
+                        <button class="toggle-btn" id="focusModeBtn" title="Focus Mode">
+                            <span class="focus-icon"></span>
+                        </button>
+                        <button class="toggle-btn speed-100" id="speedBtn" title="Speed">100</button>
+                    </div>
+                    
+                    <div class="progress-controls-row">
+                        <button class="toggle-btn secondary-btn" id="hintBtn" title="Show hint">?</button>
+                        <div class="progress-container"><div class="progress-bar" id="progressBar"></div></div>
+                        <span id="timeDisplay">0:00 / 0:42</span>
+                        <button class="toggle-btn secondary-btn" id="endDictationBtn" title="End dictation">X</button>
+                    </div>
+                </div>
+                <audio id="audioPlayer" preload="auto"></audio>
+            </div>
+
+            <!-- TEXT SECTION -->
+            <div class="text-section">
+                <div class="input-area">
+                    <div class="live-feedback" id="liveFeedback">Live Feedback</div>
+                    <textarea class="input-field" id="userInput" placeholder="Shift+Cmd+Enter = Play/Pause
+ae = ä | oe = ö | ue = ü | ß = ß
+Type here..."></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success feedback -->
+    <div id="tutorialSuccess">
+        <svg viewBox="0 0 24 24" width="20" height="20">
+            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z" fill="#10b981"/>
+        </svg>
+    </div>
+
+    <!-- Tutorial Overlay -->
+    <div id="tutorialOverlay" class="tutorial-overlay">
+        <div id="tutorialPanel" class="tutorial-panel">
+            <div id="tutorialTitle" class="tutorial-title">Welcome! 👋</div>
+            <div id="tutorialContent" class="tutorial-content">
+                Let's learn the essentials in 2 minutes
+            </div>
+            <div id="tutorialProgress" class="tutorial-progress"></div>
+            <div class="tutorial-buttons">
+                <button id="tutorialSkip" class="tutorial-btn tutorial-btn-secondary">Skip</button>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button id="tutorialPrev" class="tutorial-btn tutorial-btn-secondary" style="display: none;">‹</button>
+                    <button id="tutorialNext" class="tutorial-btn tutorial-btn-primary">Next</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/tutorial-new.js"></script>
+</body>
+</html>
