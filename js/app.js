@@ -10,6 +10,7 @@ import { UIControls } from './modules/ui-controls.js';
 import { KeyboardShortcuts } from './modules/keyboard-shortcuts.js';
 import { Statistics } from './modules/statistics.js';
 import { Exporter } from './modules/export.js';
+import { Tutorial } from './modules/tutorial.js';
 import { DOMHelpers } from './utils/dom-helpers.js';
 
 export class DictationApp {
@@ -23,6 +24,7 @@ export class DictationApp {
         this.keyboard = new KeyboardShortcuts();
         this.statistics = new Statistics();
         this.exporter = new Exporter();
+        this.tutorial = null; // Will be initialized after audio player
         
         // Initialization flag
         this.initialized = false;
@@ -52,6 +54,9 @@ export class DictationApp {
             const audioElement = DOMHelpers.getElementById('audioPlayer', true);
             this.audioPlayer = new AudioPlayer(audioElement);
             this.audioPlayer.initializeElements();
+            
+            // Initialize tutorial after audio player
+            this.tutorial = new Tutorial(this);
             
             // Initialize UI controls
             this.uiControls.initialize();
@@ -494,7 +499,11 @@ export class DictationApp {
         const tutorialBtn = DOMHelpers.getElementById('tutorialLauncher');
         if (tutorialBtn) {
             DOMHelpers.addEventListener(tutorialBtn, 'click', () => {
-                window.open('tutorial.html', '_blank');
+                if (this.tutorial) {
+                    this.tutorial.start();
+                } else {
+                    console.warn('Tutorial not initialized yet');
+                }
             });
             
             // Add hover effect

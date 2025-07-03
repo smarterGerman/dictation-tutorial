@@ -112,7 +112,13 @@ class SimpleTutorial {
     
     async loadVTTFile(vttPath) {
         try {
+            console.log(`Loading VTT file: ${vttPath}`);
             const response = await fetch(vttPath);
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
             const vttText = await response.text();
             this.parseVTT(vttText);
             console.log(`📄 Loaded ${this.sentences.length} sentences from VTT file`);
@@ -165,7 +171,7 @@ class SimpleTutorial {
     
     setupBasicFunctionality() {
         // Get audio element and set up sample audio
-        const audioEl = document.getElementById('audioPlayer');
+        const audioEl = document.getElementById('audioPlayer') || document.getElementById('audio');
         const playBtn = document.getElementById('playBtn');
         const speedBtn = document.getElementById('speedBtn');
         const nextBtn = document.getElementById('nextBtn');
@@ -270,8 +276,13 @@ class SimpleTutorial {
     }
     
     playSentence() {
-        const audioEl = document.getElementById('audioPlayer');
+        const audioEl = document.getElementById('audioPlayer') || document.getElementById('audio');
         const playBtn = document.getElementById('playBtn');
+        
+        if (!audioEl) {
+            console.warn('Audio element not found');
+            return;
+        }
         
         if (this.sentences.length === 0) {
             console.warn('No sentences loaded yet');
@@ -283,11 +294,11 @@ class SimpleTutorial {
         this.isPlayingSentence = true;
         
         audioEl.play().then(() => {
-            playBtn.classList.add('playing');
+            if (playBtn) playBtn.classList.add('playing');
             console.log(`▶️ Playing sentence ${this.currentSentence + 1}: "${current.text}"`);
         }).catch(e => {
             console.log('Audio play failed:', e.message);
-            playBtn.classList.add('playing');
+            if (playBtn) playBtn.classList.add('playing');
             this.isPlayingSentence = true;
         });
     }
@@ -320,7 +331,19 @@ class SimpleTutorial {
         if (step.target) {
             const targetEl = document.querySelector(step.target);
             if (targetEl) {
-                targetEl.classList.add('tutorial-highlight');
+                console.log('✨ Adding button-highlight class to:', targetEl.id, targetEl.tagName);
+                targetEl.classList.add('button-highlight');
+                
+                // Add body dimming for contrast
+                document.body.classList.add('tutorial-dimming');
+                
+                // Verify the class was added
+                setTimeout(() => {
+                    console.log('Verification - element has class:', targetEl.classList.contains('button-highlight'));
+                    const computedStyle = window.getComputedStyle(targetEl);
+                    console.log('Computed box-shadow:', computedStyle.boxShadow);
+                }, 100);
+                
                 this.createSpotlight(targetEl);
                 
                 // Auto-focus text input when highlighted
@@ -421,15 +444,13 @@ class SimpleTutorial {
             this.successEl.style.top = (rect.top + rect.height / 2 - 20) + 'px';
         }
         
-        // Add highlight class to make checkmark stand out
-        this.successEl.classList.add('tutorial-highlight');
+        // Show checkmark without changing its styling
         this.successEl.classList.add('show');
         
         // Keep checkmark visible longer
         setTimeout(() => {
             this.successEl.classList.remove('show');
-            this.successEl.classList.remove('tutorial-highlight');
-        }, 1500); // Increased from 600ms to 1500ms
+        }, 1500);
     }
     
     removeTargetListener() {
@@ -444,7 +465,14 @@ class SimpleTutorial {
     createSpotlight(targetEl) {
         // Simplified spotlight - just highlight the element without complex masking
         const rect = targetEl.getBoundingClientRect();
-        console.log('Creating simple highlight for element');
+        console.log('🎯 Creating highlight for:', targetEl.id, targetEl.tagName, targetEl.className);
+        
+        // Log computed styles to see what's actually being applied
+        const computedStyle = window.getComputedStyle(targetEl);
+        console.log('Box shadow applied:', computedStyle.boxShadow);
+        console.log('Z-index applied:', computedStyle.zIndex);
+        console.log('Position applied:', computedStyle.position);
+        console.log('Has button-highlight class:', targetEl.classList.contains('button-highlight'));
         
         // Just remove overlay background to show element clearly
         this.overlay.style.background = 'rgba(0, 0, 0, 0.4)';
@@ -475,9 +503,13 @@ class SimpleTutorial {
     }
     
     clearHighlights() {
-        document.querySelectorAll('.tutorial-highlight').forEach(el => {
-            el.classList.remove('tutorial-highlight');
+        console.log('🧹 Clearing all highlights');
+        document.querySelectorAll('.button-highlight').forEach(el => {
+            console.log('Removing highlight from:', el.id, el.tagName);
+            el.classList.remove('button-highlight');
         });
+        // Remove body dimming
+        document.body.classList.remove('tutorial-dimming');
     }
     
     end() {
@@ -486,8 +518,28 @@ class SimpleTutorial {
         this.clearHighlights();
         this.removeTargetListener();
         this.removeSpotlight();
+        this.cleanupEventListeners();
         this.overlay.classList.remove('show');
         this.panel.classList.remove('show');
+    }
+    
+    cleanupEventListeners() {
+        // Remove tutorial-setup attributes to allow re-initialization if needed
+        document.querySelectorAll('[data-tutorial-setup]').forEach(el => {
+            el.removeAttribute('data-tutorial-setup');
+        });
+        
+        // Reset any modified element states
+        const audioEl = document.getElementById('audioPlayer') || document.getElementById('audio');
+        const playBtn = document.getElementById('playBtn');
+        
+        if (audioEl) {
+            audioEl.playbackRate = 1.0; // Reset to normal speed
+        }
+        
+        if (playBtn) {
+            playBtn.classList.remove('playing');
+        }
     }
 }
 
