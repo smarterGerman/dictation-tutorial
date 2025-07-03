@@ -131,34 +131,116 @@ export class KeyboardShortcuts {
      * Handle global keydown events
      */
     handleGlobalKeyDown(e) {
-        if (!this.isEnabled) return;
+        console.log('🔧 KEYBOARD SHORTCUTS DEBUG:');
+        console.log('  Enabled:', this.isEnabled);
+        console.log('  Event:', {
+            key: e.key,
+            code: e.code,
+            shiftKey: e.shiftKey,
+            metaKey: e.metaKey,
+            ctrlKey: e.ctrlKey,
+            repeat: e.repeat
+        });
+        
+        if (!this.isEnabled) {
+            console.log('  ❌ Shortcuts disabled, returning');
+            return;
+        }
+        
+        // Check if tutorial is active and specifically handling this keyboard event
+        if (window.activeTutorial && window.activeTutorial.isActive) {
+            console.log('  🎯 Tutorial is active');
+            const currentStep = window.activeTutorial.steps[window.activeTutorial.currentStep];
+            console.log('  Tutorial step:', currentStep?.id, 'action:', currentStep?.action);
+            
+            if (currentStep && currentStep.action === 'keyboard') {
+                console.log('  🎯 Tutorial is on keyboard step');
+                
+                // Don't interfere with modifier-only key presses
+                const modifierKeys = ['Shift', 'Control', 'Meta', 'Alt', 'Cmd'];
+                if (modifierKeys.includes(e.key)) {
+                    console.log('  ⏭️ Modifier key only, letting tutorial handle');
+                    return; // Let the tutorial handle modifier keys
+                }
+                
+                // Check if this specific key combination matches what the tutorial is expecting
+                const keyCombo = this.getKeyCombo(e);
+                const tutorialKeyCombo = this.formatTutorialKeyCombo(currentStep.keyCombo);
+                
+                console.log('  🔍 Comparing:', keyCombo, 'vs', tutorialKeyCombo);
+                
+                if (keyCombo === tutorialKeyCombo) {
+                    // Let the tutorial handle this specific keyboard shortcut
+                    console.log('  ✅ Match! Preventing default and letting tutorial handle:', keyCombo);
+                    e.preventDefault(); // Prevent default browser behavior for tutorial shortcuts
+                    return;
+                }
+                // Otherwise, continue with normal shortcut handling
+                console.log('  ❌ No match, processing normally');
+            }
+        }
         
         // Ignore key repeat events
         if (e.repeat) {
+            console.log('  ⏭️ Repeat event, ignoring');
             return;
         }
         
         // Ignore modifier keys themselves - only process when a non-modifier key is pressed
         const modifierKeys = ['Shift', 'Control', 'Meta', 'Alt', 'Cmd'];
         if (modifierKeys.includes(e.key)) {
+            console.log('  ⏭️ Modifier key only, ignoring');
             return;
         }
         
         const keyCombo = this.getKeyCombo(e);
+        console.log('  🔑 Generated key combo:', keyCombo);
+        
         const handler = this.shortcuts.get(keyCombo);
         
         if (handler) {
+            console.log('  ✅ Found handler for:', keyCombo);
             e.preventDefault();
             handler(e);
             return;
+        } else {
+            console.log('  ❌ No handler found for:', keyCombo);
+            console.log('  Available shortcuts:', Array.from(this.shortcuts.keys()));
         }
         
         // Handle special hint shortcuts with multiple possible keys
         if (e.shiftKey && (e.ctrlKey || e.metaKey) && (e.key === 'ß' || e.key === '/' || e.key === ',')) {
+            console.log('  ✅ Special hint shortcut detected');
             e.preventDefault();
             if (this.onShowHint) this.onShowHint();
             return;
         }
+        
+        console.log('  ❌ No action taken for key combo:', keyCombo);
+    }
+    
+    /**
+     * Format tutorial key combo to match our format
+     */
+    formatTutorialKeyCombo(keyCombo) {
+        if (!keyCombo || !Array.isArray(keyCombo)) return '';
+        
+        const parts = [];
+        const normalizedCombo = keyCombo.map(k => k.toLowerCase());
+        
+        // Add modifiers in order
+        if (normalizedCombo.includes('shift')) parts.push('shift');
+        if (normalizedCombo.includes('ctrl')) parts.push('ctrl');
+        if (normalizedCombo.includes('meta')) parts.push('meta');
+        if (normalizedCombo.includes('alt')) parts.push('alt');
+        
+        // Add the main key (non-modifier)
+        const mainKey = keyCombo.find(k => !['Shift', 'Ctrl', 'Meta', 'Alt'].includes(k));
+        if (mainKey) {
+            parts.push(mainKey.toLowerCase());
+        }
+        
+        return parts.join('+');
     }
     
     /**

@@ -517,6 +517,9 @@ export class DictationApp {
                 this.style.transform = 'translateY(0)';
             });
         }
+        
+        // Setup global keyboard shortcut for tutorial (Shift+Cmd+I)
+        Tutorial.setupGlobalShortcut(this);
     }
     
     /**

@@ -34,9 +34,9 @@ export class DOMHelpers {
     /**
      * Add event listener with error handling
      */
-    static addEventListener(element, event, handler) {
+    static addEventListener(element, event, handler, options) {
         if (element && typeof handler === 'function') {
-            element.addEventListener(event, handler);
+            element.addEventListener(event, handler, options);
             return true;
         }
         console.warn(`Failed to add event listener: element or handler invalid`);
@@ -46,9 +46,9 @@ export class DOMHelpers {
     /**
      * Remove event listener with error handling
      */
-    static removeEventListener(element, event, handler) {
+    static removeEventListener(element, event, handler, options) {
         if (element && typeof handler === 'function') {
-            element.removeEventListener(event, handler);
+            element.removeEventListener(event, handler, options);
             return true;
         }
         return false;

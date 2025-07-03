@@ -150,7 +150,10 @@ export class AudioPlayer {
                 // Currently playing - pause and remember position
                 this.pausedPosition = this.audio.currentTime;
                 this.audio.pause();
-                if (this.playBtn) this.playBtn.classList.add('mid-sentence');
+                if (this.playBtn) {
+                    this.playBtn.classList.add('mid-sentence');
+                    this.playBtn.classList.add('paused'); // Add green dot indicator
+                }
                 this.isAtSentenceStart = false;
             } else {
                 // Currently paused - resume from paused position or start from beginning
@@ -221,7 +224,10 @@ export class AudioPlayer {
             this.currentCueIndex--;
             this.pausedPosition = null; // Reset pause state
             this.isAtSentenceStart = true;
-            if (this.playBtn) this.playBtn.classList.remove('mid-sentence');
+            if (this.playBtn) {
+                this.playBtn.classList.remove('mid-sentence');
+                this.playBtn.classList.remove('paused'); // Remove green dot
+            }
             this.updateCurrentSentence();
             this.seekToCurrentCue();
             if (this.onSentenceChange) {
@@ -238,7 +244,10 @@ export class AudioPlayer {
             this.currentCueIndex++;
             this.pausedPosition = null; // Reset pause state
             this.isAtSentenceStart = true;
-            if (this.playBtn) this.playBtn.classList.remove('mid-sentence');
+            if (this.playBtn) {
+                this.playBtn.classList.remove('mid-sentence');
+                this.playBtn.classList.remove('paused'); // Remove green dot
+            }
             this.updateCurrentSentence();
             this.seekToCurrentCue();
             if (this.onSentenceChange) {
@@ -326,6 +335,15 @@ export class AudioPlayer {
         
         this.playBtn.disabled = isDisabled;
         DOMHelpers.toggleClass(this.playBtn, 'playing', this.isPlaying);
+        
+        // Manage paused state indicator (green dot)
+        if (!this.isPlaying && this.pausedPosition !== null) {
+            // Audio is paused mid-sentence - show green dot
+            this.playBtn.classList.add('paused');
+        } else {
+            // Audio is playing or stopped - hide green dot
+            this.playBtn.classList.remove('paused');
+        }
     }
     
     /**
@@ -463,6 +481,7 @@ export class AudioPlayer {
             
             if (this.playBtn) {
                 DOMHelpers.toggleClass(this.playBtn, 'mid-sentence', false);
+                this.playBtn.classList.remove('paused'); // Remove green dot
             }
             
             const playPromise = this.audio.play();
@@ -491,7 +510,10 @@ export class AudioPlayer {
                 this.audio.currentTime = cue.start;
                 this.pausedPosition = null;
                 this.isAtSentenceStart = true;
-                if (this.playBtn) this.playBtn.classList.remove('mid-sentence');
+                if (this.playBtn) {
+                    this.playBtn.classList.remove('mid-sentence');
+                    this.playBtn.classList.remove('paused'); // Remove green dot
+                }
             }
             
             const playPromise = this.audio.play();
