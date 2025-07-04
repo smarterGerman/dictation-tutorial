@@ -23,7 +23,7 @@ export class Tutorial {
         this.isMobile = window.innerWidth <= 768 || /Mobi|Android/i.test(navigator.userAgent);
 
         // Tutorial steps configuration
-        this.steps = [
+        const allSteps = [
             {
                 id: 'play-button',
                 title: 'Play Button',
@@ -47,7 +47,7 @@ export class Tutorial {
                 validation: () => this.app.audioPlayer && !this.app.audioPlayer.isPlaying
             },
             // Keyboard shortcut steps are hidden on mobile
-            !this.isMobile && {
+            {
                 id: 'keyboard-play',
                 title: 'Keyboard Shortcut: Play/Pause',
                 description: 'Press Shift + Cmd/Ctrl + Enter to play/pause audio. The green dot indicates that your audio is paused.',
@@ -55,6 +55,7 @@ export class Tutorial {
                 highlightType: 'pulse',
                 action: 'keyboard',
                 keyCombo: ['Shift', 'Meta', 'Enter'], // Will handle cross-platform
+                mobileHidden: true,
                 validation: () => {
                     console.log('  🔍 VALIDATION DEBUG (keyboard-play):');
                     console.log('    app.audioPlayer exists:', !!this.app.audioPlayer);
@@ -113,7 +114,7 @@ export class Tutorial {
                     }, 100);
                 }
             },
-            !this.isMobile && {
+            {
                 id: 'keyboard-next',
                 title: 'Keyboard Shortcut: Next Sentence',
                 description: 'Press Shift + Cmd/Ctrl + → (right arrow) to go to next sentence.',
@@ -121,9 +122,65 @@ export class Tutorial {
                 highlightType: 'pulse',
                 action: 'keyboard',
                 keyCombo: ['Shift', 'Meta', 'ArrowRight'],
-                validation: function() { /* ...existing code... */ return false; },
-                onStart: function() { /* ...existing code... */ },
-                onComplete: function() { /* ...existing code... */ }
+                mobileHidden: true,
+                validation: () => {
+                    console.log('  🔍 VALIDATION DEBUG (keyboard-next):');
+                    console.log('    currentStepStartIndex:', this.currentStepStartIndex);
+                    console.log('    app.audioPlayer exists:', !!this.app.audioPlayer);
+                    if (this.app.audioPlayer) {
+                        console.log('    current currentCueIndex:', this.app.audioPlayer.currentCueIndex);
+                        console.log('    total cues:', this.app.audioPlayer.vttCues ? this.app.audioPlayer.vttCues.length : 'unknown');
+                        console.log('    comparison:', this.app.audioPlayer.currentCueIndex, '>', this.currentStepStartIndex);
+                        console.log('    result:', this.app.audioPlayer.currentCueIndex > this.currentStepStartIndex);
+                    }
+                    
+                    if (this.currentStepStartIndex === undefined) {
+                        console.log('    ❌ currentStepStartIndex is undefined');
+                        return false;
+                    }
+                    if (!this.app.audioPlayer) {
+                        console.log('    ❌ audioPlayer not available');
+                        return false;
+                    }
+                    const currentIndex = this.app.audioPlayer.currentCueIndex;
+                    const totalCues = this.app.audioPlayer.vttCues ? this.app.audioPlayer.vttCues.length : 0;
+                    
+                    // If we moved forward, great!
+                    if (currentIndex > this.currentStepStartIndex) {
+                        console.log('    ✅ Moved forward successfully');
+                        return true;
+                    }
+                    
+                    // If we're at the last cue and started at the last cue, accept it
+                    if (this.currentStepStartIndex >= totalCues - 1 && currentIndex >= totalCues - 1) {
+                        console.log('    ✅ Already at last cue, shortcut executed correctly');
+                        return true;
+                    }
+                    
+                    console.log('    ❌ No forward movement detected');
+                    console.log('    Debug: startIndex=', this.currentStepStartIndex, 'currentIndex=', currentIndex, 'totalCues=', totalCues);
+                    return false;
+                },
+                onStart: () => {
+                    // Store the starting index when this step begins
+                    if (this.app.audioPlayer) {
+                        this.currentStepStartIndex = this.app.audioPlayer.currentCueIndex;
+                    }
+                    // Ensure text input is NOT focused during keyboard shortcuts
+                    const userInput = document.getElementById('userInput');
+                    if (userInput) {
+                        userInput.blur();
+                        userInput.value = ''; // Clear any existing content
+                    }
+                },
+                onComplete: () => {
+                    // Play the new sentence after successful navigation
+                    setTimeout(() => {
+                        if (this.app.audioPlayer) {
+                            this.app.audioPlayer.playCurrentSentence();
+                        }
+                    }, 200);
+                }
             },
             {
                 id: 'prev-sentence',
@@ -168,7 +225,7 @@ export class Tutorial {
                     }, 100);
                 }
             },
-            !this.isMobile && {
+            {
                 id: 'keyboard-prev',
                 title: 'Keyboard Shortcut: Previous Sentence',
                 description: 'Press Shift + Cmd/Ctrl + ← (left arrow) to go to previous sentence.',
@@ -176,9 +233,63 @@ export class Tutorial {
                 highlightType: 'pulse',
                 action: 'keyboard',
                 keyCombo: ['Shift', 'Meta', 'ArrowLeft'],
-                validation: function() { /* ...existing code... */ return false; },
-                onStart: function() { /* ...existing code... */ },
-                onComplete: function() { /* ...existing code... */ }
+                mobileHidden: true,
+                validation: () => {
+                    console.log('  🔍 VALIDATION DEBUG (keyboard-prev):');
+                    console.log('    prevStepStartIndex:', this.prevStepStartIndex);
+                    console.log('    app.audioPlayer exists:', !!this.app.audioPlayer);
+                    if (this.app.audioPlayer) {
+                        console.log('    current currentCueIndex:', this.app.audioPlayer.currentCueIndex);
+                        console.log('    comparison:', this.app.audioPlayer.currentCueIndex, '<', this.prevStepStartIndex);
+                        console.log('    result:', this.app.audioPlayer.currentCueIndex < this.prevStepStartIndex);
+                    }
+                    
+                    if (this.prevStepStartIndex === undefined) {
+                        console.log('    ❌ prevStepStartIndex is undefined');
+                        return false;
+                    }
+                    if (!this.app.audioPlayer) {
+                        console.log('    ❌ audioPlayer not available');
+                        return false;
+                    }
+                    const currentIndex = this.app.audioPlayer.currentCueIndex;
+                    
+                    // If we moved backward, great!
+                    if (currentIndex < this.prevStepStartIndex) {
+                        console.log('    ✅ Moved backward successfully');
+                        return true;
+                    }
+                    
+                    // If we're at index 0 and started at index 0, accept it
+                    if (this.prevStepStartIndex === 0 && currentIndex === 0) {
+                        console.log('    ✅ Already at first cue, shortcut executed correctly');
+                        return true;
+                    }
+                    
+                    console.log('    ❌ No backward movement detected');
+                    console.log('    Debug: startIndex=', this.prevStepStartIndex, 'currentIndex=', currentIndex);
+                    return false;
+                },
+                onStart: () => {
+                    // Store the starting index when this step begins
+                    if (this.app.audioPlayer) {
+                        this.prevStepStartIndex = this.app.audioPlayer.currentCueIndex;
+                    }
+                    // Ensure text input is NOT focused during keyboard shortcuts
+                    const userInput = document.getElementById('userInput');
+                    if (userInput) {
+                        userInput.blur();
+                        userInput.value = ''; // Clear any existing content
+                    }
+                },
+                onComplete: () => {
+                    // Play the new sentence after successful navigation
+                    setTimeout(() => {
+                        if (this.app.audioPlayer) {
+                            this.app.audioPlayer.playCurrentSentence();
+                        }
+                    }, 200);
+                }
             },
             {
                 id: 'speed-control',
@@ -218,7 +329,7 @@ export class Tutorial {
                     }, 50);
                 }
             },
-            !this.isMobile && {
+            {
                 id: 'keyboard-speed',
                 title: 'Keyboard Shortcut: Speed Control',
                 description: 'Press Shift + Cmd/Ctrl + ↓ (down arrow) to cycle through playback speeds.',
@@ -226,10 +337,53 @@ export class Tutorial {
                 highlightType: 'pulse',
                 action: 'keyboard',
                 keyCombo: ['Shift', 'Meta', 'ArrowDown'],
-                validation: function() { /* ...existing code... */ return false; },
-                onStart: function() { /* ...existing code... */ }
+                mobileHidden: true,
+                validation: () => {
+                    console.log('  🔍 VALIDATION DEBUG (keyboard-speed):');
+                    
+                    if (!this.speedStatesVisited) {
+                        this.speedStatesVisited = new Set();
+                    }
+                    
+                    // Track the current speed state
+                    if (this.app.audioPlayer) {
+                        this.speedStatesVisited.add(this.app.audioPlayer.currentSpeed);
+                        console.log('    current speed:', this.app.audioPlayer.currentSpeed);
+                        console.log('    visited speeds:', Array.from(this.speedStatesVisited));
+                    }
+                    
+                    // For this step, we just need to see that the user pressed the shortcut and changed the speed
+                    // We'll check if the speed changed from what it was when the step started
+                    const currentSpeed = this.app.audioPlayer ? this.app.audioPlayer.currentSpeed : 1.0;
+                    const speedChanged = this.keyboardSpeedStepStartSpeed !== undefined && 
+                                       currentSpeed !== this.keyboardSpeedStepStartSpeed;
+                    
+                    console.log('    start speed:', this.keyboardSpeedStepStartSpeed, 'current speed:', currentSpeed);
+                    console.log('    speed changed:', speedChanged);
+                    
+                    return speedChanged;
+                },
+                onStart: () => {
+                    // Store the starting speed for this step
+                    this.keyboardSpeedStepStartSpeed = this.app.audioPlayer ? this.app.audioPlayer.currentSpeed : 1.0;
+                    
+                    // Ensure text input is NOT focused during keyboard shortcuts
+                    const userInput = document.getElementById('userInput');
+                    if (userInput) {
+                        userInput.blur();
+                        userInput.value = ''; // Clear any existing content
+                    }
+                },
+                onComplete: () => {
+                    // Play sentence to demonstrate the new speed
+                    setTimeout(() => {
+                        if (this.app.audioPlayer) {
+                            this.app.audioPlayer.playCurrentSentence();
+                        }
+                    }, 200);
+                }
             },
-            !this.isMobile && {
+            {
                 id: 'keyboard-play-current',
                 title: 'Keyboard Shortcut: Play/Repeat Current Sentence',
                 description: 'Press Shift + Cmd/Ctrl + ↑ (up arrow) to play/repeat the current sentence from the beginning.',
@@ -237,8 +391,32 @@ export class Tutorial {
                 highlightType: 'pulse',
                 action: 'keyboard',
                 keyCombo: ['Shift', 'Meta', 'ArrowUp'],
-                validation: function() { /* ...existing code... */ return false; },
-                onStart: function() { /* ...existing code... */ }
+                mobileHidden: true,
+                validation: () => {
+                    console.log('  🔍 VALIDATION DEBUG (keyboard-play-current):');
+                    console.log('    app.audioPlayer exists:', !!this.app.audioPlayer);
+                    if (this.app.audioPlayer) {
+                        console.log('    isPlaying:', this.app.audioPlayer.isPlaying);
+                        console.log('    currentTime:', this.app.audioPlayer.audio ? this.app.audioPlayer.audio.currentTime : 'unknown');
+                    }
+                    
+                    // Check if audio is playing (indicating sentence was repeated)
+                    const result = this.app.audioPlayer && this.app.audioPlayer.isPlaying;
+                    console.log('    Final validation result:', result);
+                    return result;
+                },
+                onStart: () => {
+                    // Ensure text input is NOT focused during keyboard shortcuts
+                    const userInput = document.getElementById('userInput');
+                    if (userInput) {
+                        userInput.blur();
+                        userInput.value = ''; // Clear any existing content
+                    }
+                    // Ensure audio is paused so user can practice playing with keyboard shortcut
+                    if (this.app.audioPlayer && this.app.audioPlayer.isPlaying) {
+                        this.app.audioPlayer.pause();
+                    }
+                }
             },
             {
                 id: 'hint-button',
@@ -258,7 +436,7 @@ export class Tutorial {
                     });
                 }
             },
-            !this.isMobile && {
+            {
                 id: 'keyboard-hint',
                 title: 'Keyboard Shortcut: Hint System',
                 description: 'Press Shift + Cmd/Ctrl + ß (or / or ,) to show/hide the hint for the current sentence.',
@@ -266,9 +444,46 @@ export class Tutorial {
                 highlightType: 'pulse',
                 action: 'keyboard',
                 keyCombo: ['Shift', 'Meta', 'ß'],
-                validation: function() { /* ...existing code... */ return false; },
-                onStart: function() { /* ...existing code... */ },
-                onComplete: function() { /* ...existing code... */ }
+                mobileHidden: true,
+                validation: () => {
+                    console.log('  🔍 VALIDATION DEBUG (keyboard-hint):');
+                    
+                    const hintDisplay = document.getElementById('hintDisplay');
+                    console.log('    hintDisplay element exists:', !!hintDisplay);
+                    if (hintDisplay) {
+                        console.log('    hintDisplay style.display:', hintDisplay.style.display);
+                        console.log('    hintDisplay computed display:', window.getComputedStyle(hintDisplay).display);
+                    }
+                    
+                    // For keyboard hint validation, we want to check if the hint display state changed
+                    // We'll track if the hint was toggled from its initial state
+                    const isVisible = hintDisplay && hintDisplay.style.display !== 'none';
+                    const stateChanged = this.keyboardHintStepStartState !== undefined && 
+                                       isVisible !== this.keyboardHintStepStartState;
+                    
+                    console.log('    start state:', this.keyboardHintStepStartState, 'current visible:', isVisible);
+                    console.log('    state changed:', stateChanged);
+                    
+                    return stateChanged;
+                },
+                onStart: () => {
+                    // Store the starting hint display state
+                    const hintDisplay = document.getElementById('hintDisplay');
+                    this.keyboardHintStepStartState = hintDisplay && hintDisplay.style.display !== 'none';
+                    
+                    // Ensure text input is NOT focused during keyboard shortcuts
+                    const userInput = document.getElementById('userInput');
+                    if (userInput) {
+                        userInput.blur();
+                        userInput.value = ''; // Clear any existing content
+                    }
+                },
+                onComplete: () => {
+                    // Add a delay so users can notice the hint toggle before tutorial advances
+                    return new Promise(resolve => {
+                        setTimeout(resolve, 1500); // 1.5 second delay to notice the hint
+                    });
+                }
             },
             {
                 id: 'typing-practice-2',
@@ -327,8 +542,68 @@ export class Tutorial {
                         setTimeout(resolve, 3000); // 3 second delay to notice the focus mode
                     });
                 }
+            },
+            {
+                id: 'close-button',
+                title: 'End Dictation',
+                description: 'Click the "X" button to end the dictation session and see your results.',
+                targetSelector: '#endDictationBtn',
+                highlightType: 'pulse',
+                action: 'click',
+                validation: () => {
+                    // This step will be completed when the user clicks the end dictation button
+                    // We'll handle this specially in the click handler
+                    return false; // Never auto-complete, only through manual click
+                },
+                onStart: () => {
+                    // Mark this as the end dictation step for special handling
+                    this.isEndDictationStep = true;
+                },
+                onComplete: () => {
+                    // Don't actually end the dictation yet, advance to the next step instead
+                    this.isEndDictationStep = false;
+                }
+            },
+            {
+                id: 'export-options',
+                title: 'Export & Restart Options',
+                description: 'After ending dictation, you can access the Restart button (↻) to clear all text and start over, or the CSV Export button to download your progress. Try clicking on either button to see these features.',
+                targetSelector: '#restartBtn', // Start with restart button
+                highlightType: 'pulse',
+                action: 'click',
+                validation: () => {
+                    // This step completes when user clicks either restart or export button
+                    return this.exportOptionsInteracted;
+                },
+                onStart: () => {
+                    this.exportOptionsInteracted = false;
+                    // Make sure both buttons are visible by ensuring stats panel is shown
+                    this.tempHideTutorial = true;
+                    if (this.overlay) {
+                        this.overlay.style.display = 'none';
+                    }
+                },
+                onComplete: () => {
+                    // Show tutorial overlay again
+                    this.tempHideTutorial = false;
+                    if (this.overlay) {
+                        this.overlay.style.display = 'block';
+                    }
+                }
             }
         ];
+
+        // Filter out keyboard shortcut steps on mobile
+        this.steps = allSteps.filter(step => {
+            if (this.isMobile && step.mobileHidden) {
+                return false; // Exclude this step on mobile
+            }
+            return true; // Include this step
+        });
+
+        // Log the step count for debugging
+        console.log(`Tutorial initialized: ${this.isMobile ? 'Mobile' : 'Desktop'} mode, ${this.steps.length} total steps`);
+        console.log('Steps included:', this.steps.map(s => s.id));
     }
 
     /**
@@ -484,6 +759,13 @@ export class Tutorial {
         // Always remove existing highlights first
         this.removeHighlight();
         
+        // Special handling for export options step - highlight both buttons
+        const currentStep = this.steps[this.currentStep];
+        if (currentStep && currentStep.id === 'export-options') {
+            this.highlightExportOptions();
+            return;
+        }
+        
         const element = document.querySelector(selector);
         if (!element) {
             console.warn('Tutorial target element not found:', selector);
@@ -536,6 +818,55 @@ export class Tutorial {
     }
 
     /**
+     * Highlight both restart and export CSV buttons for the export options step
+     */
+    highlightExportOptions() {
+        const restartBtn = document.getElementById('restartBtn');
+        const exportBtn = document.getElementById('exportCsvBtn');
+        
+        // Create highlights for both buttons
+        [restartBtn, exportBtn].forEach((btn, index) => {
+            if (!btn) return;
+            
+            btn.classList.add('tutorial-target');
+            const rect = btn.getBoundingClientRect();
+            
+            const highlight = document.createElement('div');
+            highlight.className = 'tutorial-highlight tutorial-highlight-pulse';
+            
+            const size = Math.min(100, Math.max(rect.width, rect.height) + 24);
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            
+            highlight.style.position = 'fixed';
+            highlight.style.left = (centerX - size / 2) + 'px';
+            highlight.style.top = (centerY - size / 2) + 'px';
+            highlight.style.width = size + 'px';
+            highlight.style.height = size + 'px';
+            highlight.style.borderRadius = '50%';
+            highlight.style.zIndex = '15000';
+            highlight.style.pointerEvents = 'none';
+            
+            // Stagger the animation slightly for visual appeal
+            highlight.style.animationDelay = (index * 0.2) + 's';
+            
+            document.body.appendChild(highlight);
+            
+            // Store reference for cleanup (store in array for multiple highlights)
+            if (!this.multipleHighlights) {
+                this.multipleHighlights = [];
+            }
+            this.multipleHighlights.push(highlight);
+        });
+        
+        // Position tutorial dialog near the buttons
+        if (restartBtn) {
+            const rect = restartBtn.getBoundingClientRect();
+            this.positionTutorialDialog(rect, '#restartBtn');
+        }
+    }
+
+    /**
      * Create a spotlight effect around the target element
      */
     createSpotlight(rect) {
@@ -575,6 +906,16 @@ export class Tutorial {
         if (this.highlightElement) {
             this.highlightElement.remove();
             this.highlightElement = null;
+        }
+        
+        // Remove multiple highlights (for export options step)
+        if (this.multipleHighlights) {
+            this.multipleHighlights.forEach(highlight => {
+                if (highlight.parentNode) {
+                    highlight.remove();
+                }
+            });
+            this.multipleHighlights = null;
         }
         
         if (this.spotlightElement) {
@@ -640,6 +981,48 @@ export class Tutorial {
         if (!this.isActive) return;
         
         const currentStep = this.steps[this.currentStep];
+        
+        // Special handling for export options step - track clicks on restart and export buttons
+        if (currentStep.id === 'export-options') {
+            const restartBtn = document.getElementById('restartBtn');
+            const exportBtn = document.getElementById('exportCsvBtn');
+            
+            if (restartBtn && (event.target === restartBtn || restartBtn.contains(event.target))) {
+                console.log('Restart button clicked during export options step');
+                this.exportOptionsInteracted = true;
+                setTimeout(() => {
+                    if (currentStep.validation && currentStep.validation()) {
+                        this.stepCompleted();
+                    }
+                }, 100);
+                return;
+            }
+            
+            if (exportBtn && (event.target === exportBtn || exportBtn.contains(event.target))) {
+                console.log('Export CSV button clicked during export options step');
+                this.exportOptionsInteracted = true;
+                setTimeout(() => {
+                    if (currentStep.validation && currentStep.validation()) {
+                        this.stepCompleted();
+                    }
+                }, 100);
+                return;
+            }
+        }
+        
+        // Special handling for end dictation step
+        if (currentStep.id === 'close-button') {
+            const endBtn = document.getElementById('endDictationBtn');
+            if (endBtn && (event.target === endBtn || endBtn.contains(event.target))) {
+                console.log('End dictation button clicked during close button step');
+                // Prevent the actual end dictation action, just advance to next step
+                event.preventDefault();
+                event.stopPropagation();
+                this.stepCompleted();
+                return;
+            }
+        }
+        
         if (currentStep.action !== 'click' && currentStep.action !== 'doubleclick') return;
         
         const target = document.querySelector(currentStep.targetSelector);
@@ -1041,7 +1424,9 @@ export class Tutorial {
             currentStepId === 'keyboard-hint' ||
             currentStepId === 'typing-practice-2' ||
             currentStepId === 'case-sensitivity' ||
-            currentStepId === 'focus-mode') {
+            currentStepId === 'focus-mode' ||
+            currentStepId === 'close-button' ||
+            currentStepId === 'export-options') {
             // Don't change position for:
             // - slide 3 (typing-practice-1)
             // - slide 10 (hint-button)
@@ -1049,6 +1434,8 @@ export class Tutorial {
             // - slide 12 (typing-practice-2) 
             // - slide 13 (case-sensitivity)
             // - slide 14 (focus-mode)
+            // - slide 15 (close-button)
+            // - slide 16 (export-options)
             // Keep the existing position classes from the previous step
             return;
         }
@@ -1083,6 +1470,12 @@ export class Tutorial {
                 this.overlay.classList.add('position-top');
             } else if (selector.includes('hintBtn') || selector.includes('ignoreCaseBtn') || selector.includes('focusModeBtn')) {
                 // Lower buttons - position at bottom
+                this.overlay.classList.add('position-bottom');
+            } else if (selector.includes('endDictationBtn')) {
+                // End dictation button - position at bottom left
+                this.overlay.classList.add('position-bottom');
+            } else if (selector.includes('restartBtn') || selector.includes('exportCsvBtn')) {
+                // Restart and export CSV buttons - position at bottom
                 this.overlay.classList.add('position-bottom');
             } else {
                 // Default positioning to the right
