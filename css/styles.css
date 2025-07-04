@@ -1058,9 +1058,10 @@ body {
     z-index: 100;
 }
 
+
 .tutorial-btn-launcher {
-    width: 48px;
-    height: 48px;
+    width: 36px;
+    height: 36px;
     border: none;
     border-radius: 50%;
     background: #3b82f6 !important;
