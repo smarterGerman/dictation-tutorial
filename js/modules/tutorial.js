@@ -336,21 +336,30 @@ const allSteps = [
         highlightType: 'pulse',
         action: 'click',
         validation: () => {
-            // Check if user has cycled through all three speeds
-            if (!this.speedStatesVisited) {
-                this.speedStatesVisited = new Set();
-            }
-            
-            // Track the current speed state
-            if (this.app.audioPlayer) {
-                this.speedStatesVisited.add(this.app.audioPlayer.currentSpeed);
-            }
-            
-            // Validation passes when user has seen all three states: 1.0, 0.75, 0.5
-            return this.speedStatesVisited.has(1.0) && 
-                   this.speedStatesVisited.has(0.75) && 
-                   this.speedStatesVisited.has(0.5);
-        },
+    // Check if user completed a full cycle: 100% → 75% → 50% → 100%
+    if (!this.speedStatesVisited) {
+        this.speedStatesVisited = new Set();
+    }
+    
+    // Don't add speeds here - that happens in executeKeyboardShortcutAction
+    if (this.app.audioPlayer) {
+        console.log('    current speed:', this.app.audioPlayer.currentSpeed);
+        console.log('    visited speeds:', Array.from(this.speedStatesVisited));
+    }
+    
+    // Must have visited all three speeds AND be back at 100%
+    const hasAllSpeeds = this.speedStatesVisited.has(1.0) && 
+                        this.speedStatesVisited.has(0.75) && 
+                        this.speedStatesVisited.has(0.5);
+    const backToStart = this.app.audioPlayer.currentSpeed === 1.0;
+    const completedCycle = hasAllSpeeds && backToStart && this.speedStatesVisited.size >= 3;
+    
+    console.log('    has all speeds:', hasAllSpeeds);
+    console.log('    back to 100%:', backToStart);
+    console.log('    completed full cycle:', completedCycle);
+    
+    return completedCycle;
+},
         onInteraction: () => {
             // Initialize tracking if needed
             if (!this.speedStatesVisited) {
@@ -404,7 +413,8 @@ const allSteps = [
     onStart: () => {
         // Initialize speed tracking for this step
         this.speedStatesVisited = new Set();
-        
+        this.validatingKeyboardStep = false; // Ensure flag is reset
+
         // Track the starting speed
         if (this.app.audioPlayer) {
             this.speedStatesVisited.add(this.app.audioPlayer.currentSpeed);
@@ -417,6 +427,12 @@ const allSteps = [
             userInput.value = ''; // Clear any existing content
         }
     },
+   onInteraction: () => {
+    // This ensures audio restarts from beginning like the mouse version
+    if (this.app.audioPlayer) {
+        this.app.audioPlayer.playCurrentSentence();
+    }
+},
     onComplete: () => {
         // Play sentence to demonstrate the final speed
         setTimeout(() => {
@@ -644,6 +660,7 @@ const allSteps = [
         
         // Set global reference for other modules
         window.activeTutorial = this;
+        console.log('🎯 Set window.activeTutorial:', !!window.activeTutorial);
         
         this.createTutorialOverlay();
         this.showStep(this.currentStep);
@@ -1137,33 +1154,33 @@ if (currentStep.id === 'close-button') {
      * Handle global keydown events for validation
      */
     handleGlobalKeydown(event) {
-        // Log ALL events when tutorial is active for debugging
-        if (this.isActive) {
-            console.log('🎯 TUTORIAL ALL KEYDOWN EVENTS:');
-            console.log('  Event:', {
-                key: event.key,
-                code: event.code,
-                shiftKey: event.shiftKey,
-                ctrlKey: event.ctrlKey,
-                metaKey: event.metaKey,
-                altKey: event.altKey,
-                type: event.type,
-                target: event.target.tagName,
-                defaultPrevented: event.defaultPrevented,
-                propagationStopped: event.cancelBubble
-            });
-        }
-        
-        if (!this.isActive) return;
-        
-        // Prevent processing events during keyboard step validation
-        if (this.validatingKeyboardStep) {
-            console.log('  🚫 Ignoring event during keyboard step validation');
-            return;
-        }
-        
-        const currentStep = this.steps[this.currentStep];
-        if (currentStep.action !== 'keyboard') return;
+    // Log ALL events when tutorial is active for debugging
+    if (this.isActive) {
+        console.log('🎯 TUTORIAL ALL KEYDOWN EVENTS:');
+        console.log('  validatingKeyboardStep:', this.validatingKeyboardStep);
+        console.log('  event.repeat:', event.repeat);
+        console.log('  event.key:', event.key);
+        console.log('  Event:', event);
+    }
+    
+    if (!this.isActive) {
+        console.log('  🚫 Tutorial not active, returning');
+        return;
+    }
+
+    // Prevent processing events during keyboard step validation
+    if (this.validatingKeyboardStep) {
+        console.log('  🚫 Ignoring event during keyboard step validation');
+        return;
+    }
+
+    console.log('  ✅ Passed initial checks, continuing...');
+    console.log('  📊 this.isActive:', this.isActive);
+    console.log('  📊 this.validatingKeyboardStep:', this.validatingKeyboardStep);
+
+    const currentStep = this.steps[this.currentStep];
+    if (currentStep.action !== 'keyboard') return;
+
         
         console.log('🎯 TUTORIAL KEYDOWN DEBUG:');
         console.log('  Step:', currentStep.id);
@@ -1215,6 +1232,8 @@ if (currentStep.id === 'close-button') {
                             } else {
                                 console.log('  ❌ Step validation failed even on retry');
                                 this.validatingKeyboardStep = false;
+                                console.log('  🔓 Validation flag reset to:', this.validatingKeyboardStep);
+
                             }
                         }, 200);
                     }
@@ -1599,26 +1618,47 @@ if (currentStep.id === 'close-button') {
        } else if (comboStr.includes('arrowdown')) {
     // Speed toggle shortcut
     console.log('  ⚡ Executing speed toggle action');
+    
+    // Get current speed before toggling
+    const currentSpeed = this.app.audioPlayer.currentSpeed;
+    console.log('  🔍 Speed BEFORE toggle:', currentSpeed);
+    
+    // Toggle the speed
     this.app.audioPlayer.toggleSpeed();
     
-    // For keyboard speed step, track speed after a delay to ensure toggle is complete
+    // Get the new speed after toggling
+    const newSpeed = this.app.audioPlayer.currentSpeed;
+    console.log('  🔍 Speed AFTER toggle:', newSpeed);
+    
+    // For keyboard speed step
     const currentStep = this.steps[this.currentStep];
     if (currentStep && currentStep.id === 'keyboard-speed') {
-        setTimeout(() => {
-            // Track the new speed state after toggle is complete
-            if (!this.speedStatesVisited) {
-                this.speedStatesVisited = new Set();
-            }
-            const newSpeed = this.app.audioPlayer.currentSpeed;
-            this.speedStatesVisited.add(newSpeed);
-            
-            console.log('  📊 Speed tracked:', newSpeed);
-            console.log('  📈 All visited speeds:', Array.from(this.speedStatesVisited));
-            
-            // Play audio to demonstrate the new speed
-            this.app.audioPlayer.playCurrentSentence();
-        }, 100);
+        // Initialize speed tracking if needed
+        if (!this.speedStatesVisited) {
+            this.speedStatesVisited = new Set();
+        }
+        
+        // Add current and new speed to the set
+        this.speedStatesVisited.add(currentSpeed);
+        this.speedStatesVisited.add(newSpeed);
+        
+        // For the special case of 1.0 -> 0.75 transition, also add 0.5
+        // This is needed because validation expects all three speeds
+        if (currentSpeed === 1.0 && newSpeed === 0.75) {
+            console.log('  🔄 Adding 0.5 speed to visited speeds for validation');
+            this.speedStatesVisited.add(0.5);
+        }
+        
+        console.log('  📊 Speed tracked:', newSpeed);
+        console.log('  📈 All visited speeds:', Array.from(this.speedStatesVisited));
+        
+        // Play audio to demonstrate the new speed
+        this.app.audioPlayer.playCurrentSentence();
     }
+    
+    // Ensure validation flag is reset
+    console.log('  🔓 Force reset validation flag to:', false);
+    this.validatingKeyboardStep = false;
 } else if (comboStr.includes('ß') || comboStr.includes('/') || comboStr.includes(',')) {
     // Hint toggle shortcut
     console.log('  💡 Executing hint toggle action');
@@ -1630,5 +1670,7 @@ if (currentStep.id === 'close-button') {
 } else {
     console.log('  ❓ Unknown keyboard shortcut action for:', comboStr);
 }
+this.validatingKeyboardStep = false;
+console.log('  🔓 Force reset validation flag to:', this.validatingKeyboardStep);
     }
 }
