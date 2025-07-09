@@ -50,35 +50,40 @@ export class Statistics {
     /**
      * Record sentence result
      */
-    recordSentenceResult(sentenceIndex, reference, userInput, options = {}) {
-        let sentenceTime = 0;
-        
-        if (this.hasStartedTyping && this.sentenceStartTime) {
-            sentenceTime = TimeHelpers.msToSeconds(
-                TimeHelpers.elapsed(this.sentenceStartTime)
-            );
-            this.totalSessionTime += sentenceTime;
-        }
-        
-        // Calculate comparison and word stats
-        const comparison = TextComparison.compareTexts(reference, userInput, options);
-        const wordStats = TextComparison.calculateWordStats(reference, userInput, options);
-        
-        const result = {
-            sentenceIndex,
-            reference,
-            userInput,
-            stats: wordStats,
-            time: sentenceTime,
-            comparison,
-            timestamp: TimeHelpers.now()
-        };
-        
-        this.sessionResults.push(result);
-        this.resetSentenceTiming();
-        
-        return result;
+    /**
+ * Record sentence result - FIXED to include case sensitivity
+ */
+recordSentenceResult(sentenceIndex, reference, userInput, options = {}) {
+    let sentenceTime = 0;
+    
+    if (this.hasStartedTyping && this.sentenceStartTime) {
+        sentenceTime = TimeHelpers.msToSeconds(
+            TimeHelpers.elapsed(this.sentenceStartTime)
+        );
+        this.totalSessionTime += sentenceTime;
     }
+    
+    // Calculate comparison and word stats WITH the provided options (including ignoreCase)
+    const comparison = TextComparison.compareTexts(reference, userInput, options);
+    const wordStats = TextComparison.calculateWordStats(reference, userInput, options);
+    
+    const result = {
+        sentenceIndex,
+        reference,
+        userInput,
+        stats: wordStats,
+        time: sentenceTime,
+        comparison,
+        timestamp: TimeHelpers.now(),
+        // STORE the case sensitivity setting used for this result
+        ignoreCaseUsed: options.ignoreCase !== undefined ? options.ignoreCase : true
+    };
+    
+    this.sessionResults.push(result);
+    this.resetSentenceTiming();
+    
+    return result;
+}
     
     /**
      * Reset sentence timing
