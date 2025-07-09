@@ -101,8 +101,8 @@ const allSteps = [
     },
     {
         id: 'keyboard-play-current',
-        title: 'Keyboard Shortcut: Play/Repeat Current Sentence',
-        description: 'Press Shift + Cmd/Ctrl + ↑ (up arrow) to play/repeat the current sentence from the beginning.',
+        title: 'Keyboard Shortcut: Repeat Sentence',
+        description: 'Press Shift + Cmd/Ctrl + ↑ (up arrow) to repeat the current sentence from the beginning.',
         targetSelector: '#speedBtn', // Use speed button as visual reference
         highlightType: 'pulse',
         action: 'keyboard',
