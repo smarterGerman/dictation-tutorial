@@ -1032,18 +1032,34 @@ const allSteps = [
             }
         }
         
-        // Special handling for end dictation step
-        if (currentStep.id === 'close-button') {
-            const endBtn = document.getElementById('endDictationBtn');
-            if (endBtn && (event.target === endBtn || endBtn.contains(event.target))) {
-                console.log('End dictation button clicked during close button step');
-                // Prevent the actual end dictation action, just advance to next step
-                event.preventDefault();
-                event.stopPropagation();
-                this.stepCompleted();
-                return;
-            }
+       // Special handling for end dictation step
+if (currentStep.id === 'close-button') {
+    const endBtn = document.getElementById('endDictationBtn');
+    const tutorialCloseBtn = document.getElementById('tutorialClose');
+    
+    // Make sure we're clicking the DICTATION end button, not the tutorial close button
+    if (endBtn && (event.target === endBtn || endBtn.contains(event.target))) {
+        // Verify we're NOT clicking the tutorial close button
+        if (tutorialCloseBtn && (event.target === tutorialCloseBtn || tutorialCloseBtn.contains(event.target))) {
+            // This is the tutorial close button - let it work normally, don't interfere
+            return;
         }
+        
+        console.log('End dictation button clicked during close button step');
+        // Prevent the actual end dictation action, just advance to next step
+        event.preventDefault();
+        event.stopPropagation();
+        
+        // Manually trigger the results display without ending the tutorial
+        if (this.app && this.app.showFinalResult) {
+            this.app.showFinalResult();
+        }
+        
+        // Advance to next tutorial step
+        this.stepCompleted();
+        return;
+    }
+}
         
         if (currentStep.action !== 'click' && currentStep.action !== 'doubleclick') return;
         
