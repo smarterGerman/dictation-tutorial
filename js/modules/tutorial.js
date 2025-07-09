@@ -427,24 +427,31 @@ const allSteps = [
         }, 200);
     }
 },
-    {
-        id: 'hint-button',
-        title: 'Hint System',
-        description: 'Click the "?" button to see the expected text for the current sentence.',
-        targetSelector: '#hintBtn',
-        highlightType: 'pulse',
-        action: 'click',
-        validation: () => {
-            const hintDisplay = document.getElementById('hintDisplay');
-            return hintDisplay && hintDisplay.style.display !== 'none';
-        },
-        onComplete: () => {
-            // Add a delay so users can notice the hint before tutorial advances
-            return new Promise(resolve => {
-                setTimeout(resolve, 800); // 1.5 second delay to notice the hint
-            });
-        }
+{
+    id: 'hint-button',
+    title: 'Hint System',
+    description: 'Click the "?" button to see the expected text for the current sentence.',
+    targetSelector: '#hintBtn',
+    highlightType: 'pulse',
+    action: 'click',
+    validation: () => {
+        const hintDisplay = document.getElementById('hintDisplay');
+        return hintDisplay && hintDisplay.style.display !== 'none';
     },
+    onComplete: () => {
+        // Add a delay so users can notice the hint, then manually hide it
+        return new Promise(resolve => {
+            setTimeout(() => {
+                // Manually hide the hint to override the auto-hide timer
+                const hintDisplay = document.getElementById('hintDisplay');
+                if (hintDisplay) {
+                    hintDisplay.style.display = 'none';
+                }
+                resolve();
+            }, 800);
+        });
+    }
+},  
     {
         id: 'keyboard-hint',
         title: 'Keyboard Shortcut: Hint System',
@@ -488,11 +495,18 @@ const allSteps = [
             }
         },
         onComplete: () => {
-            // Add a delay so users can notice the hint toggle before tutorial advances
-            return new Promise(resolve => {
-                setTimeout(resolve, 1500); // 1.5 second delay to notice the hint
-            });
-        }
+    // Add a delay so users can notice the hint toggle, then manually hide it
+    return new Promise(resolve => {
+        setTimeout(() => {
+            // Manually hide the hint to override the auto-hide timer
+            const hintDisplay = document.getElementById('hintDisplay');
+            if (hintDisplay && hintDisplay.style.display !== 'none') {
+                hintDisplay.style.display = 'none';
+            }
+            resolve();
+        }, 800);
+    });
+}
     },
     {
         id: 'typing-practice-2',
