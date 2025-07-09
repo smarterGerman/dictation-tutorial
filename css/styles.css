@@ -771,15 +771,23 @@ body {
     background: white;
     border-radius: 16px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    max-width: 400px; /* Smaller width for side positioning */
-    width: 90%;
+    width: 400px; /* Fixed width instead of max-width */
+    min-height: 200px;
     max-height: 70vh;
     overflow: hidden;
-    position: relative;
+    /* CHANGED: Fixed positioning instead of relative */
+    position: fixed;
+    bottom: 40px;
+    right: 40px;
+    /* ADDED: Transform origin for expanding up/left */
+    transform-origin: bottom right;
+    transition: height 0.2s ease-out;
     animation: tutorialSlideIn 0.4s ease-out;
     pointer-events: all;
+    /* ADDED: Flex layout for fixed button positioning */
+    display: flex;
+    flex-direction: column;
 }
-
 @keyframes tutorialSlideIn {
     from { 
         opacity: 0;
@@ -1021,8 +1029,29 @@ body {
     }
     
     .tutorial-container {
-        max-width: none;
-        width: 100%;
+        /* CHANGED: Mobile positioning */
+        bottom: 20px;
+        right: 20px;
+        left: 20px;
+        width: auto;
+        max-height: 60vh;
+        transform-origin: bottom center;
+    }
+    
+    /* ADDED: Mobile button layout */
+    .tutorial-actions {
+        position: relative !important;
+        display: flex !important;
+        gap: 10px;
+        justify-content: space-between;
+    }
+    
+    .tutorial-actions .tutorial-btn {
+        position: relative !important;
+        flex: 1;
+        transform: none !important;
+        left: auto !important;
+        right: auto !important;
     }
 }
 
