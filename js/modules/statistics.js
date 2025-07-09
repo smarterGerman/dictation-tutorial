@@ -50,35 +50,40 @@ export class Statistics {
     /**
      * Record sentence result
      */
-    recordSentenceResult(sentenceIndex, reference, userInput, options = {}) {
-        let sentenceTime = 0;
-        
-        if (this.hasStartedTyping && this.sentenceStartTime) {
-            sentenceTime = TimeHelpers.msToSeconds(
-                TimeHelpers.elapsed(this.sentenceStartTime)
-            );
-            this.totalSessionTime += sentenceTime;
-        }
-        
-        // Calculate comparison and word stats
-        const comparison = TextComparison.compareTexts(reference, userInput, options);
-        const wordStats = TextComparison.calculateWordStats(reference, userInput, options);
-        
-        const result = {
-            sentenceIndex,
-            reference,
-            userInput,
-            stats: wordStats,
-            time: sentenceTime,
-            comparison,
-            timestamp: TimeHelpers.now()
-        };
-        
-        this.sessionResults.push(result);
-        this.resetSentenceTiming();
-        
-        return result;
+    /**
+ * Record sentence result - FIXED to include case sensitivity
+ */
+recordSentenceResult(sentenceIndex, reference, userInput, options = {}) {
+    let sentenceTime = 0;
+    
+    if (this.hasStartedTyping && this.sentenceStartTime) {
+        sentenceTime = TimeHelpers.msToSeconds(
+            TimeHelpers.elapsed(this.sentenceStartTime)
+        );
+        this.totalSessionTime += sentenceTime;
     }
+    
+    // Calculate comparison and word stats WITH the provided options (including ignoreCase)
+    const comparison = TextComparison.compareTexts(reference, userInput, options);
+    const wordStats = TextComparison.calculateWordStats(reference, userInput, options);
+    
+    const result = {
+        sentenceIndex,
+        reference,
+        userInput,
+        stats: wordStats,
+        time: sentenceTime,
+        comparison,
+        timestamp: TimeHelpers.now(),
+        // STORE the case sensitivity setting used for this result
+        ignoreCaseUsed: options.ignoreCase !== undefined ? options.ignoreCase : true
+    };
+    
+    this.sessionResults.push(result);
+    this.resetSentenceTiming();
+    
+    return result;
+}
     
     /**
      * Reset sentence timing
@@ -225,18 +230,31 @@ export class Statistics {
     /**
      * Generate HTML for a sentence result with word-level feedback
      */
-    generateResultHTML(result) {
-        const { reference, userInput } = result;
-        
-        // Get normalized comparison for word alignment
-        const refNormalized = reference.replace(/[.,!?;:()]/g, '').toLowerCase();
-        const userNormalized = userInput.replace(/[.,!?;:()]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
-        
-        const refWords = refNormalized.split(/\s+/).filter(w => w.length > 0);
-        const userWords = userNormalized.split(/\s+/).filter(w => w.length > 0);
-        
-        const alignment = TextComparison.alignSequencesWithGaps(refWords, userWords);
-        
+    /**
+ * Generate HTML for a sentence result with word-level feedback - FIXED to respect case sensitivity
+ */
+generateResultHTML(result) {
+    const { reference, userInput, ignoreCaseUsed } = result;
+    
+    // Use the case sensitivity setting that was used when this result was recorded
+    const ignoreCase = ignoreCaseUsed !== undefined ? ignoreCaseUsed : true;
+    
+    // Get normalized comparison for word alignment - respect case sensitivity setting
+    let refNormalized, userNormalized;
+    if (ignoreCase) {
+        refNormalized = reference.replace(/[.,!?;:()]/g, '').toLowerCase();
+        userNormalized = userInput.replace(/[.,!?;:()]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+    } else {
+        // Don't convert to lowercase if case sensitivity is ON
+        refNormalized = reference.replace(/[.,!?;:()]/g, '');
+        userNormalized = userInput.replace(/[.,!?;:()]/g, '').replace(/\s+/g, ' ').trim();
+    }
+    
+    const refWords = refNormalized.split(/\s+/).filter(w => w.length > 0);
+    const userWords = userNormalized.split(/\s+/).filter(w => w.length > 0);
+    
+    const alignment = TextComparison.alignSequencesWithGaps(refWords, userWords);
+    
         // Build word-to-punctuation mapping from original reference text
         const originalText = reference;
         const words = originalText.split(/\s+/);
