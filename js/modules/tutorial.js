@@ -378,38 +378,37 @@ const allSteps = [
    {
     id: 'keyboard-speed',
     title: 'Keyboard Shortcut: Speed Control',
-    description: 'Press Shift + Cmd/Ctrl + ↓ (down arrow) 3x to cycle through all playback speeds (100%, 75%, 50%). Audio will play to demonstrate each speed.',
+        description: 'Press Shift + Cmd/Ctrl + ↓ (down arrow) exactly 3 times to cycle: 100% → 75% → 50% → 100%. Audio will restart each time to demonstrate the speed.',
     targetSelector: '#speedBtn',
     highlightType: 'pulse',
     action: 'keyboard',
     keyCombo: ['Shift', 'Meta', 'ArrowDown'],
     mobileHidden: true,
     validation: () => {
-        console.log('  🔍 VALIDATION DEBUG (keyboard-speed):');
-        
-        // Check if user has cycled through all three speeds (same as mouse version)
-        if (!this.speedStatesVisited) {
-            this.speedStatesVisited = new Set();
-        }
-        
-        // Check the current speed state (don't add it - that happens in executeKeyboardShortcutAction)
-        if (this.app.audioPlayer) {
-            console.log('    current speed:', this.app.audioPlayer.currentSpeed);
-            console.log('    visited speeds:', Array.from(this.speedStatesVisited));
-        }
-        
-        // Validation passes when user has seen all three states: 1.0, 0.75, 0.5
-        const hasAllSpeeds = this.speedStatesVisited.has(1.0) && 
-                            this.speedStatesVisited.has(0.75) && 
-                            this.speedStatesVisited.has(0.5);
-        
-        console.log('    has all speeds:', hasAllSpeeds);
-        console.log('    has 1.0:', this.speedStatesVisited.has(1.0));
-        console.log('    has 0.75:', this.speedStatesVisited.has(0.75));
-        console.log('    has 0.5:', this.speedStatesVisited.has(0.5));
-        
-        return hasAllSpeeds;
-    },
+    console.log('  🔍 VALIDATION DEBUG (keyboard-speed):');
+    
+    if (!this.speedStatesVisited) {
+        this.speedStatesVisited = new Set();
+    }
+    
+    if (this.app.audioPlayer) {
+        console.log('    current speed:', this.app.audioPlayer.currentSpeed);
+        console.log('    visited speeds:', Array.from(this.speedStatesVisited));
+    }
+    
+    // Must have visited all three speeds AND be back at 100% (same as mouse version)
+    const hasAllSpeeds = this.speedStatesVisited.has(1.0) && 
+                        this.speedStatesVisited.has(0.75) && 
+                        this.speedStatesVisited.has(0.5);
+    const backToStart = this.app.audioPlayer.currentSpeed === 1.0;
+    const completedCycle = hasAllSpeeds && backToStart && this.speedStatesVisited.size >= 3;
+    
+    console.log('    has all speeds:', hasAllSpeeds);
+    console.log('    back to 100%:', backToStart);
+    console.log('    completed full cycle:', completedCycle);
+    
+    return completedCycle;
+},
     onStart: () => {
         // Initialize speed tracking for this step
         this.speedStatesVisited = new Set();
@@ -1202,10 +1201,12 @@ if (currentStep.id === 'close-button') {
         console.log('  Key combo match result:', isMatch);
         
         if (isMatch) {
+            event.preventDefault(); 
+            event.stopPropagation();
             console.log('  ✅ Tutorial: Key combo matched! Executing the actual shortcut action...');
-            
-            // Prevent any auto-advancement during keyboard step validation
-            this.validatingKeyboardStep = true;
+
+            // Allow multiple keypresses for speed cycling - don't block
+            // this.validatingKeyboardStep = true;  // REMOVED - was blocking subsequent keypresses
             
             // Execute the actual keyboard shortcut action first
             this.executeKeyboardShortcutAction(currentStep.keyCombo);
@@ -1619,46 +1620,29 @@ if (currentStep.id === 'close-button') {
     // Speed toggle shortcut
     console.log('  ⚡ Executing speed toggle action');
     
-    // Get current speed before toggling
-    const currentSpeed = this.app.audioPlayer.currentSpeed;
-    console.log('  🔍 Speed BEFORE toggle:', currentSpeed);
-    
     // Toggle the speed
     this.app.audioPlayer.toggleSpeed();
     
-    // Get the new speed after toggling
-    const newSpeed = this.app.audioPlayer.currentSpeed;
-    console.log('  🔍 Speed AFTER toggle:', newSpeed);
-    
-    // For keyboard speed step
+    // For keyboard speed step - track exactly like mouse version
     const currentStep = this.steps[this.currentStep];
     if (currentStep && currentStep.id === 'keyboard-speed') {
-        // Initialize speed tracking if needed
+        // Initialize tracking if needed
         if (!this.speedStatesVisited) {
             this.speedStatesVisited = new Set();
         }
         
-        // Add current and new speed to the set
-        this.speedStatesVisited.add(currentSpeed);
-        this.speedStatesVisited.add(newSpeed);
-        
-        // For the special case of 1.0 -> 0.75 transition, also add 0.5
-        // This is needed because validation expects all three speeds
-        if (currentSpeed === 1.0 && newSpeed === 0.75) {
-            console.log('  🔄 Adding 0.5 speed to visited speeds for validation');
-            this.speedStatesVisited.add(0.5);
-        }
-        
-        console.log('  📊 Speed tracked:', newSpeed);
-        console.log('  📈 All visited speeds:', Array.from(this.speedStatesVisited));
-        
-        // Play audio to demonstrate the new speed
-        this.app.audioPlayer.playCurrentSentence();
+        // Track the NEW speed (after toggle) - same as mouse version
+        setTimeout(() => {
+            if (this.app.audioPlayer) {
+                this.speedStatesVisited.add(this.app.audioPlayer.currentSpeed);
+                console.log('  📊 Speed tracked:', this.app.audioPlayer.currentSpeed);
+                console.log('  📈 All visited speeds:', Array.from(this.speedStatesVisited));
+                
+                // Play the current sentence to demonstrate the speed change
+                this.app.audioPlayer.playCurrentSentence();
+            }
+        }, 50);
     }
-    
-    // Ensure validation flag is reset
-    console.log('  🔓 Force reset validation flag to:', false);
-    this.validatingKeyboardStep = false;
 } else if (comboStr.includes('ß') || comboStr.includes('/') || comboStr.includes(',')) {
     // Hint toggle shortcut
     console.log('  💡 Executing hint toggle action');
