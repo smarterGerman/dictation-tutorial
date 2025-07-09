@@ -366,60 +366,67 @@ const allSteps = [
             }, 50);
         }
     },
-    {
-        id: 'keyboard-speed',
-        title: 'Keyboard Shortcut: Speed Control',
-        description: 'Press Shift + Cmd/Ctrl + ↓ (down arrow) to cycle through playback speeds.',
-        targetSelector: '#speedBtn',
-        highlightType: 'pulse',
-        action: 'keyboard',
-        keyCombo: ['Shift', 'Meta', 'ArrowDown'],
-        mobileHidden: true,
-        validation: () => {
-            console.log('  🔍 VALIDATION DEBUG (keyboard-speed):');
-            
-            if (!this.speedStatesVisited) {
-                this.speedStatesVisited = new Set();
-            }
-            
-            // Track the current speed state
-            if (this.app.audioPlayer) {
-                this.speedStatesVisited.add(this.app.audioPlayer.currentSpeed);
-                console.log('    current speed:', this.app.audioPlayer.currentSpeed);
-                console.log('    visited speeds:', Array.from(this.speedStatesVisited));
-            }
-            
-            // For this step, we just need to see that the user pressed the shortcut and changed the speed
-            // We'll check if the speed changed from what it was when the step started
-            const currentSpeed = this.app.audioPlayer ? this.app.audioPlayer.currentSpeed : 1.0;
-            const speedChanged = this.keyboardSpeedStepStartSpeed !== undefined && 
-                               currentSpeed !== this.keyboardSpeedStepStartSpeed;
-            
-            console.log('    start speed:', this.keyboardSpeedStepStartSpeed, 'current speed:', currentSpeed);
-            console.log('    speed changed:', speedChanged);
-            
-            return speedChanged;
-        },
-        onStart: () => {
-            // Store the starting speed for this step
-            this.keyboardSpeedStepStartSpeed = this.app.audioPlayer ? this.app.audioPlayer.currentSpeed : 1.0;
-            
-            // Ensure text input is NOT focused during keyboard shortcuts
-            const userInput = document.getElementById('userInput');
-            if (userInput) {
-                userInput.blur();
-                userInput.value = ''; // Clear any existing content
-            }
-        },
-        onComplete: () => {
-            // Play sentence to demonstrate the new speed
-            setTimeout(() => {
-                if (this.app.audioPlayer) {
-                    this.app.audioPlayer.playCurrentSentence();
-                }
-            }, 200);
+   {
+    id: 'keyboard-speed',
+    title: 'Keyboard Shortcut: Speed Control',
+    description: 'Press Shift + Cmd/Ctrl + ↓ (down arrow) 3x to cycle through all playback speeds (100%, 75%, 50%). Audio will play to demonstrate each speed.',
+    targetSelector: '#speedBtn',
+    highlightType: 'pulse',
+    action: 'keyboard',
+    keyCombo: ['Shift', 'Meta', 'ArrowDown'],
+    mobileHidden: true,
+    validation: () => {
+        console.log('  🔍 VALIDATION DEBUG (keyboard-speed):');
+        
+        // Check if user has cycled through all three speeds (same as mouse version)
+        if (!this.speedStatesVisited) {
+            this.speedStatesVisited = new Set();
+        }
+        
+        // Track the current speed state
+        if (this.app.audioPlayer) {
+            this.speedStatesVisited.add(this.app.audioPlayer.currentSpeed);
+            console.log('    current speed:', this.app.audioPlayer.currentSpeed);
+            console.log('    visited speeds:', Array.from(this.speedStatesVisited));
+        }
+        
+        // Validation passes when user has seen all three states: 1.0, 0.75, 0.5
+        const hasAllSpeeds = this.speedStatesVisited.has(1.0) && 
+                            this.speedStatesVisited.has(0.75) && 
+                            this.speedStatesVisited.has(0.5);
+        
+        console.log('    has all speeds:', hasAllSpeeds);
+        console.log('    has 1.0:', this.speedStatesVisited.has(1.0));
+        console.log('    has 0.75:', this.speedStatesVisited.has(0.75));
+        console.log('    has 0.5:', this.speedStatesVisited.has(0.5));
+        
+        return hasAllSpeeds;
+    },
+    onStart: () => {
+        // Initialize speed tracking for this step
+        this.speedStatesVisited = new Set();
+        
+        // Track the starting speed
+        if (this.app.audioPlayer) {
+            this.speedStatesVisited.add(this.app.audioPlayer.currentSpeed);
+        }
+        
+        // Ensure text input is NOT focused during keyboard shortcuts
+        const userInput = document.getElementById('userInput');
+        if (userInput) {
+            userInput.blur();
+            userInput.value = ''; // Clear any existing content
         }
     },
+    onComplete: () => {
+        // Play sentence to demonstrate the final speed
+        setTimeout(() => {
+            if (this.app.audioPlayer) {
+                this.app.audioPlayer.playCurrentSentence();
+            }
+        }, 200);
+    }
+},
     {
         id: 'hint-button',
         title: 'Hint System',
@@ -1565,9 +1572,31 @@ const allSteps = [
             console.log('  🔄 Executing play current sentence action');
             this.app.audioPlayer.playCurrentSentence();
         } else if (comboStr.includes('arrowdown')) {
-            // Speed toggle shortcut
-            console.log('  ⚡ Executing speed toggle action');
-            this.app.audioPlayer.toggleSpeed();
+    // Speed toggle shortcut
+    console.log('  ⚡ Executing speed toggle action');
+    this.app.audioPlayer.toggleSpeed();
+    
+    // For keyboard speed step, play audio to demonstrate the speed change
+    const currentStep = this.steps[this.currentStep];
+    if (currentStep && currentStep.id === 'keyboard-speed') {
+        // Track the new speed state
+        if (!this.speedStatesVisited) {
+            this.speedStatesVisited = new Set();
+        }
+        this.speedStatesVisited.add(this.app.audioPlayer.currentSpeed);
+        
+        // Play sentence to demonstrate the new speed
+        setTimeout(() => {
+            if (this.app.audioPlayer) {
+                console.log('  🎵 Attempting to play at speed:', this.app.audioPlayer.currentSpeed);
+                // Ensure audio is stopped first, then play from beginning
+                this.app.audioPlayer.pause();
+                setTimeout(() => {
+                    this.app.audioPlayer.playCurrentSentence();
+                }, 50);
+            }
+        }, 200);
+    }
         } else if (comboStr.includes('ß') || comboStr.includes('/') || comboStr.includes(',')) {
             // Hint toggle shortcut
             console.log('  💡 Executing hint toggle action');
