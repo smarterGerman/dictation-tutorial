@@ -567,53 +567,58 @@ const allSteps = [
         }
     },
     {
-        id: 'close-button',
-        title: 'End Dictation',
-        description: 'Click the "X" button to end the dictation session and see your results.',
-        targetSelector: '#endDictationBtn',
-        highlightType: 'pulse',
-        action: 'click',
-        validation: () => {
-            // This step will be completed when the user clicks the end dictation button
-            // We'll handle this specially in the click handler
-            return false; // Never auto-complete, only through manual click
-        },
-        onStart: () => {
-            // Mark this as the end dictation step for special handling
-            this.isEndDictationStep = true;
-        },
-        onComplete: () => {
-            // Don't actually end the dictation yet, advance to the next step instead
-            this.isEndDictationStep = false;
-        }
+    id: 'close-button',
+    title: 'End Dictation',
+    description: 'Click the "X" button to end the dictation session and see your results.',
+    targetSelector: '#endDictationBtn',
+    highlightType: 'pulse',
+    action: 'click',
+    validation: () => {
+        // This step will be completed manually, not through validation
+        return false;
     },
-    {
-        id: 'export-options',
-        title: 'Export & Restart Options',
-        description: 'After ending dictation, you can access the Restart button (↻) to clear all text and start over, or the CSV Export button to download your progress. Try clicking on either button to see these features.',
-        targetSelector: '#restartBtn', // Start with restart button
-        highlightType: 'pulse',
-        action: 'click',
-        validation: () => {
-            // This step completes when user clicks either restart or export button
-            return this.exportOptionsInteracted;
-        },
-        onStart: () => {
-            this.exportOptionsInteracted = false;
-            // Make sure both buttons are visible by ensuring stats panel is shown
-            this.tempHideTutorial = true;
-            if (this.overlay) {
-                this.overlay.style.display = 'none';
-            }
-        },
-        onComplete: () => {
-            // Show tutorial overlay again
-            this.tempHideTutorial = false;
-            if (this.overlay) {
-                this.overlay.style.display = 'block';
-            }
-        }
+    onStart: () => {
+        // Set up special handling for this step
+        this.endDictationStepActive = true;
+    },
+    onComplete: () => {
+        this.endDictationStepActive = false;
     }
+},
+    {
+    id: 'export-csv-button',
+    title: 'CSV Export Button',
+    description: 'The CSV Export button downloads your dictation results as a spreadsheet file. Try clicking it to see how it works.',
+    targetSelector: '#exportCsvBtn',
+    highlightType: 'pulse',
+    action: 'click',
+    validation: () => {
+        return this.exportCsvButtonClicked;
+    },
+    onStart: () => {
+        this.exportCsvButtonClicked = false;
+    },
+    onComplete: () => {
+        // Continue to next step
+    }
+},
+{
+    id: 'restart-button',
+    title: 'Restart Button',
+    description: 'The Restart button (↻) clears all your text and starts the dictation over from the beginning. This is the final step of the tutorial. Click it to complete the tutorial!',
+    targetSelector: '#restartBtn',
+    highlightType: 'pulse',
+    action: 'click',
+    validation: () => {
+        return this.restartButtonClicked;
+    },
+    onStart: () => {
+        this.restartButtonClicked = false;
+    },
+    onComplete: () => {
+        // Tutorial complete after this step
+    }
+}
 ];
 
         // Filter out keyboard shortcut steps on mobile
@@ -844,48 +849,30 @@ const allSteps = [
      */
     highlightExportOptions() {
         const restartBtn = document.getElementById('restartBtn');
-        const exportBtn = document.getElementById('exportCsvBtn');
-        
-        // Create highlights for both buttons
-        [restartBtn, exportBtn].forEach((btn, index) => {
-            if (!btn) return;
-            
-            btn.classList.add('tutorial-target');
-            const rect = btn.getBoundingClientRect();
-            
-            const highlight = document.createElement('div');
-            highlight.className = 'tutorial-highlight tutorial-highlight-pulse';
-            
-            const size = Math.min(100, Math.max(rect.width, rect.height) + 24);
-            const centerX = rect.left + rect.width / 2;
-            const centerY = rect.top + rect.height / 2;
-            
-            highlight.style.position = 'fixed';
-            highlight.style.left = (centerX - size / 2) + 'px';
-            highlight.style.top = (centerY - size / 2) + 'px';
-            highlight.style.width = size + 'px';
-            highlight.style.height = size + 'px';
-            highlight.style.borderRadius = '50%';
-            highlight.style.zIndex = '15000';
-            highlight.style.pointerEvents = 'none';
-            
-            // Stagger the animation slightly for visual appeal
-            highlight.style.animationDelay = (index * 0.2) + 's';
-            
-            document.body.appendChild(highlight);
-            
-            // Store reference for cleanup (store in array for multiple highlights)
-            if (!this.multipleHighlights) {
-                this.multipleHighlights = [];
-            }
-            this.multipleHighlights.push(highlight);
-        });
-        
-        // Position tutorial dialog near the buttons
-        if (restartBtn) {
-            const rect = restartBtn.getBoundingClientRect();
-            this.positionTutorialDialog(rect, '#restartBtn');
-        }
+
+if (!restartBtn) return;
+
+restartBtn.classList.add('tutorial-target');
+const rect = restartBtn.getBoundingClientRect();
+
+const highlight = document.createElement('div');
+highlight.className = 'tutorial-highlight tutorial-highlight-pulse';
+
+const size = Math.min(100, Math.max(rect.width, rect.height) + 24);
+const centerX = rect.left + rect.width / 2;
+const centerY = rect.top + rect.height / 2;
+
+highlight.style.position = 'fixed';
+highlight.style.left = (centerX - size / 2) + 'px';
+highlight.style.top = (centerY - size / 2) + 'px';
+highlight.style.width = size + 'px';
+highlight.style.height = size + 'px';
+highlight.style.borderRadius = '50%';
+highlight.style.zIndex = '15000';
+highlight.style.pointerEvents = 'none';
+
+document.body.appendChild(highlight);
+this.highlightElement = highlight;
     }
 
     /**
@@ -1004,21 +991,34 @@ const allSteps = [
         
         const currentStep = this.steps[this.currentStep];
         
-        // Special handling for export options step - track clicks on restart and export buttons
-        if (currentStep.id === 'export-options') {
-            const restartBtn = document.getElementById('restartBtn');
-            const exportBtn = document.getElementById('exportCsvBtn');
-            
-            if (restartBtn && (event.target === restartBtn || restartBtn.contains(event.target))) {
-                console.log('Restart button clicked during export options step');
-                this.exportOptionsInteracted = true;
-                setTimeout(() => {
-                    if (currentStep.validation && currentStep.validation()) {
-                        this.stepCompleted();
-                    }
-                }, 100);
-                return;
+        // Special handling for restart button step
+if (currentStep.id === 'restart-button') {
+    const restartBtn = document.getElementById('restartBtn');
+    if (restartBtn && (event.target === restartBtn || restartBtn.contains(event.target))) {
+        console.log('Restart button clicked during restart step');
+        this.restartButtonClicked = true;
+        setTimeout(() => {
+            if (currentStep.validation && currentStep.validation()) {
+                this.stepCompleted();
             }
+        }, 100);
+        return;
+    }
+}
+
+// Special handling for export CSV button step  
+if (currentStep.id === 'export-csv-button') {
+    const exportBtn = document.getElementById('exportCsvBtn');
+    if (exportBtn && (event.target === exportBtn || exportBtn.contains(event.target))) {
+        console.log('Export CSV button clicked during export step');
+        this.exportCsvButtonClicked = true;
+        setTimeout(() => {
+            if (currentStep.validation && currentStep.validation()) {
+                this.stepCompleted();
+            }
+        }, 100);
+        return;
+    }
             
             if (exportBtn && (event.target === exportBtn || exportBtn.contains(event.target))) {
                 console.log('Export CSV button clicked during export options step');
@@ -1035,28 +1035,15 @@ const allSteps = [
        // Special handling for end dictation step
 if (currentStep.id === 'close-button') {
     const endBtn = document.getElementById('endDictationBtn');
-    const tutorialCloseBtn = document.getElementById('tutorialClose');
-    
-    // Make sure we're clicking the DICTATION end button, not the tutorial close button
     if (endBtn && (event.target === endBtn || endBtn.contains(event.target))) {
-        // Verify we're NOT clicking the tutorial close button
-        if (tutorialCloseBtn && (event.target === tutorialCloseBtn || tutorialCloseBtn.contains(event.target))) {
-            // This is the tutorial close button - let it work normally, don't interfere
-            return;
-        }
+        console.log('End dictation button clicked - advancing tutorial');
         
-        console.log('End dictation button clicked during close button step');
-        // Prevent the actual end dictation action, just advance to next step
-        event.preventDefault();
-        event.stopPropagation();
-        
-        // Manually trigger the results display without ending the tutorial
-        if (this.app && this.app.showFinalResult) {
-            this.app.showFinalResult();
-        }
-        
-        // Advance to next tutorial step
-        this.stepCompleted();
+        // Let the click happen, then advance tutorial after a delay
+        setTimeout(() => {
+            if (this.endDictationStepActive) {
+                this.stepCompleted();
+            }
+        }, 1000);
         return;
     }
 }
@@ -1356,6 +1343,8 @@ if (currentStep.id === 'close-button') {
      * Handle step completion
      */
     stepCompleted() {
+        console.log('🎯 Step completed. Current step:', this.currentStep, 'Total steps:', this.steps.length);
+
         const currentStep = this.steps[this.currentStep];
         
         // Remove highlight immediately when step is completed
@@ -1379,6 +1368,8 @@ if (currentStep.id === 'close-button') {
      * Go to next step
      */
     nextStep() {
+        console.log('🔄 nextStep called. Current:', this.currentStep, 'Total:', this.steps.length);
+
         if (this.currentStep < this.steps.length - 1) {
             this.showStep(this.currentStep + 1);
         } else {
@@ -1434,6 +1425,10 @@ if (currentStep.id === 'close-button') {
      * Close tutorial
      */
     close() {
+        if (this.preventAutoClose) {
+        console.log('Tutorial close prevented during end dictation step');
+        return;
+    }
         this.isActive = false;
         this.removeHighlight();
         
