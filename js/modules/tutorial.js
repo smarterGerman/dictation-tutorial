@@ -655,7 +655,6 @@ export class Tutorial {
                 <p class="step-description">Follow the instructions to learn all features.</p>
                 <div class="tutorial-actions">
                     <button class="tutorial-btn secondary" id="tutorialPrev">Previous</button>
-                    <button class="tutorial-btn secondary" id="tutorialSkip">Skip Tutorial</button>
                     <button class="tutorial-btn primary" id="tutorialNext">Next</button>
                 </div>
             </div>
