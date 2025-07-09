@@ -1571,7 +1571,7 @@ const allSteps = [
             // Play current sentence shortcut
             console.log('  🔄 Executing play current sentence action');
             this.app.audioPlayer.playCurrentSentence();
-        } else if (comboStr.includes('arrowdown')) {
+       } else if (comboStr.includes('arrowdown')) {
     // Speed toggle shortcut
     console.log('  ⚡ Executing speed toggle action');
     this.app.audioPlayer.toggleSpeed();
@@ -1585,17 +1585,9 @@ const allSteps = [
         }
         this.speedStatesVisited.add(this.app.audioPlayer.currentSpeed);
         
-        // Play sentence to demonstrate the new speed
-        setTimeout(() => {
-            if (this.app.audioPlayer) {
-                console.log('  🎵 Attempting to play at speed:', this.app.audioPlayer.currentSpeed);
-                // Ensure audio is stopped first, then play from beginning
-                this.app.audioPlayer.pause();
-                setTimeout(() => {
-                    this.app.audioPlayer.playCurrentSentence();
-                }, 50);
-            }
-        }, 200);
+        // Play audio immediately (same as mouse click version)
+        this.app.audioPlayer.playCurrentSentence();
+
     }
         } else if (comboStr.includes('ß') || comboStr.includes('/') || comboStr.includes(',')) {
             // Hint toggle shortcut
