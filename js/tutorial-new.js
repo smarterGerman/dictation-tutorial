@@ -76,28 +76,21 @@ class SimpleTutorial {
     setupTutorialButtons() {
         const nextBtn = document.getElementById('tutorialNext');
         const prevBtn = document.getElementById('tutorialPrev');
-        const skipBtn = document.getElementById('tutorialSkip');
-        
+
         if (nextBtn) {
             nextBtn.addEventListener('click', () => {
                 console.log('Next button clicked');
                 this.nextStep();
             });
         }
-        
+
         if (prevBtn) {
             prevBtn.addEventListener('click', () => {
                 console.log('Prev button clicked');
                 this.prevStep();
             });
         }
-        
-        if (skipBtn) {
-            skipBtn.addEventListener('click', () => {
-                console.log('Skip button clicked');
-                this.end();
-            });
-        }
+        // Removed skip button logic; use X button to close tutorial
     }
     
     start() {
