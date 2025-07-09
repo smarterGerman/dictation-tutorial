@@ -441,7 +441,7 @@ const allSteps = [
         onComplete: () => {
             // Add a delay so users can notice the hint before tutorial advances
             return new Promise(resolve => {
-                setTimeout(resolve, 1500); // 1.5 second delay to notice the hint
+                setTimeout(resolve, 800); // 1.5 second delay to notice the hint
             });
         }
     },
