@@ -383,9 +383,8 @@ const allSteps = [
             this.speedStatesVisited = new Set();
         }
         
-        // Track the current speed state
+        // Check the current speed state (don't add it - that happens in executeKeyboardShortcutAction)
         if (this.app.audioPlayer) {
-            this.speedStatesVisited.add(this.app.audioPlayer.currentSpeed);
             console.log('    current speed:', this.app.audioPlayer.currentSpeed);
             console.log('    visited speeds:', Array.from(this.speedStatesVisited));
         }
@@ -708,15 +707,16 @@ const allSteps = [
      * Setup event listeners for tutorial controls
      */
     setupTutorialEventListeners() {
-        const closeBtn = document.getElementById('tutorialClose');
-        const prevBtn = document.getElementById('tutorialPrev');
-        const nextBtn = document.getElementById('tutorialNext');
-        const skipBtn = document.getElementById('tutorialSkip');
-        
-        DOMHelpers.addEventListener(closeBtn, 'click', () => this.close());
-        DOMHelpers.addEventListener(prevBtn, 'click', () => this.previousStep());
-        DOMHelpers.addEventListener(nextBtn, 'click', () => this.nextStep());
-        DOMHelpers.addEventListener(skipBtn, 'click', () => this.close());
+    const closeBtn = document.getElementById('tutorialClose');
+    const prevBtn = document.getElementById('tutorialPrev');
+    const nextBtn = document.getElementById('tutorialNext');
+    const skipBtn = document.getElementById('tutorialSkip');
+    
+    // Add error checking before adding listeners
+    if (closeBtn) DOMHelpers.addEventListener(closeBtn, 'click', () => this.close());
+    if (prevBtn) DOMHelpers.addEventListener(prevBtn, 'click', () => this.previousStep());
+    if (nextBtn) DOMHelpers.addEventListener(nextBtn, 'click', () => this.nextStep());
+    if (skipBtn) DOMHelpers.addEventListener(skipBtn, 'click', () => this.close());
         
         // Global event listeners for validation
         DOMHelpers.addEventListener(document, 'click', (e) => this.handleGlobalClick(e));
@@ -1601,29 +1601,34 @@ if (currentStep.id === 'close-button') {
     console.log('  ⚡ Executing speed toggle action');
     this.app.audioPlayer.toggleSpeed();
     
-    // For keyboard speed step, play audio to demonstrate the speed change
+    // For keyboard speed step, track speed after a delay to ensure toggle is complete
     const currentStep = this.steps[this.currentStep];
     if (currentStep && currentStep.id === 'keyboard-speed') {
-        // Track the new speed state
-        if (!this.speedStatesVisited) {
-            this.speedStatesVisited = new Set();
-        }
-        this.speedStatesVisited.add(this.app.audioPlayer.currentSpeed);
-        
-        // Play audio immediately (same as mouse click version)
-        this.app.audioPlayer.playCurrentSentence();
-
-    }
-        } else if (comboStr.includes('ß') || comboStr.includes('/') || comboStr.includes(',')) {
-            // Hint toggle shortcut
-            console.log('  💡 Executing hint toggle action');
-            // Find and click the hint button
-            const hintBtn = document.getElementById('hintBtn');
-            if (hintBtn) {
-                hintBtn.click();
+        setTimeout(() => {
+            // Track the new speed state after toggle is complete
+            if (!this.speedStatesVisited) {
+                this.speedStatesVisited = new Set();
             }
-        } else {
-            console.log('  ❓ Unknown keyboard shortcut action for:', comboStr);
-        }
+            const newSpeed = this.app.audioPlayer.currentSpeed;
+            this.speedStatesVisited.add(newSpeed);
+            
+            console.log('  📊 Speed tracked:', newSpeed);
+            console.log('  📈 All visited speeds:', Array.from(this.speedStatesVisited));
+            
+            // Play audio to demonstrate the new speed
+            this.app.audioPlayer.playCurrentSentence();
+        }, 100);
+    }
+} else if (comboStr.includes('ß') || comboStr.includes('/') || comboStr.includes(',')) {
+    // Hint toggle shortcut
+    console.log('  💡 Executing hint toggle action');
+    // Find and click the hint button
+    const hintBtn = document.getElementById('hintBtn');
+    if (hintBtn) {
+        hintBtn.click();
+    }
+} else {
+    console.log('  ❓ Unknown keyboard shortcut action for:', comboStr);
+}
     }
 }
