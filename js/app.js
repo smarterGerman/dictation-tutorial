@@ -79,7 +79,7 @@ export class DictationApp {
             await this.loadInitialData();
             
             // Update loading text
-            this.updateLoadingText('Ready!');
+            this.updateLoadingText('');
             
             // Hide loading overlay after a brief delay
             setTimeout(() => {
