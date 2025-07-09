@@ -23,575 +23,577 @@ export class Tutorial {
         this.isMobile = window.innerWidth <= 768 || /Mobi|Android/i.test(navigator.userAgent);
 
         // Tutorial steps configuration
-        const allSteps = [
-            {
-                id: 'play-button',
-                title: 'Play Button',
-                description: 'Click the play button to start audio playback for the current sentence.',
-                targetSelector: '#playBtn',
-                highlightType: 'pulse',
-                action: 'click',
-                validation: () => this.app.audioPlayer && this.app.audioPlayer.isPlaying,
-                onComplete: () => {
-                    // Let the audio play - don't pause it immediately
-                    // The user will learn to pause it in the next step
-                }
-            },
-            {
-                id: 'pause-button',
-                title: 'Pause Button',
-                description: 'Click the play button once while audio is playing to pause it. Notice the green dot indicating paused state.',
-                targetSelector: '#playBtn',
-                highlightType: 'pulse',
-                action: 'click',
-                validation: () => this.app.audioPlayer && !this.app.audioPlayer.isPlaying
-            },
-            // Keyboard shortcut steps are hidden on mobile
-            {
-                id: 'keyboard-play',
-                title: 'Keyboard Shortcut: Play/Pause',
-                description: 'Press Shift + Cmd/Ctrl + Enter to play/pause audio. The green dot indicates that your audio is paused.',
-                targetSelector: '#playBtn',
-                highlightType: 'pulse',
-                action: 'keyboard',
-                keyCombo: ['Shift', 'Meta', 'Enter'], // Will handle cross-platform
-                mobileHidden: true,
-                validation: () => {
-                    console.log('  🔍 VALIDATION DEBUG (keyboard-play):');
-                    console.log('    app.audioPlayer exists:', !!this.app.audioPlayer);
-                    if (this.app.audioPlayer) {
-                        console.log('    isPlaying:', this.app.audioPlayer.isPlaying);
-                    }
-                    const result = this.app.audioPlayer && this.app.audioPlayer.isPlaying;
-                    console.log('    Final validation result:', result);
-                    return result;
-                },
-                onStart: () => {
-                    // Ensure text input is NOT focused when this step starts
-                    const userInput = document.getElementById('userInput');
-                    if (userInput) {
-                        userInput.blur();
-                    }
-                    // Ensure audio is paused first so user can practice continuing with keyboard shortcut
-                    if (this.app.audioPlayer && this.app.audioPlayer.isPlaying) {
-                        this.app.audioPlayer.pause();
-                    }
-                }
-            },
-            {
-                id: 'typing-practice-1',
-                title: 'Repeat Sentence',
-                description: 'Double-click the play button quickly to repeat the current sentence from the beginning.',
-                targetSelector: '#playBtn',
-                highlightType: 'pulse',
-                action: 'doubleclick',
-                validation: () => {
-                    // Check if audio is playing (indicating sentence was repeated)
-                    return this.app.audioPlayer && this.app.audioPlayer.isPlaying;
-                },
-                onStart: () => {
-                    this.doubleClickTracker = { clicks: 0, lastClickTime: 0 };
-                    // Ensure audio is paused so user can practice double-clicking to repeat
-                    if (this.app.audioPlayer && this.app.audioPlayer.isPlaying) {
-                        this.app.audioPlayer.pause();
-                    }
-                }
-            },
-            {
-                id: 'next-sentence',
-                title: 'Next Sentence',
-                description: 'Click the right arrow to move to the next sentence. Observe the progress bar.',
-                targetSelector: '#nextBtn',
-                highlightType: 'pulse',
-                action: 'click',
-                validation: () => this.app.audioPlayer && this.app.audioPlayer.currentCueIndex > 0,
-                onInteraction: () => {
-                    // Play the new sentence after navigation
-                    setTimeout(() => {
-                        if (this.app.audioPlayer) {
-                            this.app.audioPlayer.playCurrentSentence();
-                        }
-                    }, 100);
-                }
-            },
-            {
-                id: 'keyboard-next',
-                title: 'Keyboard Shortcut: Next Sentence',
-                description: 'Press Shift + Cmd/Ctrl + → (right arrow) to go to next sentence.',
-                targetSelector: '#nextBtn',
-                highlightType: 'pulse',
-                action: 'keyboard',
-                keyCombo: ['Shift', 'Meta', 'ArrowRight'],
-                mobileHidden: true,
-                validation: () => {
-                    console.log('  🔍 VALIDATION DEBUG (keyboard-next):');
-                    console.log('    currentStepStartIndex:', this.currentStepStartIndex);
-                    console.log('    app.audioPlayer exists:', !!this.app.audioPlayer);
-                    if (this.app.audioPlayer) {
-                        console.log('    current currentCueIndex:', this.app.audioPlayer.currentCueIndex);
-                        console.log('    total cues:', this.app.audioPlayer.vttCues ? this.app.audioPlayer.vttCues.length : 'unknown');
-                        console.log('    comparison:', this.app.audioPlayer.currentCueIndex, '>', this.currentStepStartIndex);
-                        console.log('    result:', this.app.audioPlayer.currentCueIndex > this.currentStepStartIndex);
-                    }
-                    
-                    if (this.currentStepStartIndex === undefined) {
-                        console.log('    ❌ currentStepStartIndex is undefined');
-                        return false;
-                    }
-                    if (!this.app.audioPlayer) {
-                        console.log('    ❌ audioPlayer not available');
-                        return false;
-                    }
-                    const currentIndex = this.app.audioPlayer.currentCueIndex;
-                    const totalCues = this.app.audioPlayer.vttCues ? this.app.audioPlayer.vttCues.length : 0;
-                    
-                    // If we moved forward, great!
-                    if (currentIndex > this.currentStepStartIndex) {
-                        console.log('    ✅ Moved forward successfully');
-                        return true;
-                    }
-                    
-                    // If we're at the last cue and started at the last cue, accept it
-                    if (this.currentStepStartIndex >= totalCues - 1 && currentIndex >= totalCues - 1) {
-                        console.log('    ✅ Already at last cue, shortcut executed correctly');
-                        return true;
-                    }
-                    
-                    console.log('    ❌ No forward movement detected');
-                    console.log('    Debug: startIndex=', this.currentStepStartIndex, 'currentIndex=', currentIndex, 'totalCues=', totalCues);
-                    return false;
-                },
-                onStart: () => {
-                    // Store the starting index when this step begins
-                    if (this.app.audioPlayer) {
-                        this.currentStepStartIndex = this.app.audioPlayer.currentCueIndex;
-                    }
-                    // Ensure text input is NOT focused during keyboard shortcuts
-                    const userInput = document.getElementById('userInput');
-                    if (userInput) {
-                        userInput.blur();
-                        userInput.value = ''; // Clear any existing content
-                    }
-                },
-                onComplete: () => {
-                    // Play the new sentence after successful navigation
-                    setTimeout(() => {
-                        if (this.app.audioPlayer) {
-                            this.app.audioPlayer.playCurrentSentence();
-                        }
-                    }, 200);
-                }
-            },
-            {
-                id: 'prev-sentence',
-                title: 'Previous Sentence',
-                description: 'Click the left arrow to go back to the previous sentence. Observe the progress bar.',
-                targetSelector: '#prevBtn',
-                highlightType: 'pulse',
-                action: 'click',
-                validation: () => {
-                    if (this.prevStepStartIndex === undefined) {
-                        return false;
-                    }
-                    if (!this.app.audioPlayer) {
-                        return false;
-                    }
-                    const currentIndex = this.app.audioPlayer.currentCueIndex;
-                    
-                    // If we moved backward, great!
-                    if (currentIndex < this.prevStepStartIndex) {
-                        return true;
-                    }
-                    
-                    // If we're at index 0 and tried to go previous, accept it
-                    if (this.prevStepStartIndex === 0 && currentIndex === 0) {
-                        return true;
-                    }
-                    
-                    return false;
-                },
-                onStart: () => {
-                    // Store the starting index when this step begins
-                    if (this.app.audioPlayer) {
-                        this.prevStepStartIndex = this.app.audioPlayer.currentCueIndex;
-                    }
-                },
-                onInteraction: () => {
-                    // Play the new sentence after navigation
-                    setTimeout(() => {
-                        if (this.app.audioPlayer) {
-                            this.app.audioPlayer.playCurrentSentence();
-                        }
-                    }, 100);
-                }
-            },
-            {
-                id: 'keyboard-prev',
-                title: 'Keyboard Shortcut: Previous Sentence',
-                description: 'Press Shift + Cmd/Ctrl + ← (left arrow) to go to previous sentence.',
-                targetSelector: '#prevBtn',
-                highlightType: 'pulse',
-                action: 'keyboard',
-                keyCombo: ['Shift', 'Meta', 'ArrowLeft'],
-                mobileHidden: true,
-                validation: () => {
-                    console.log('  🔍 VALIDATION DEBUG (keyboard-prev):');
-                    console.log('    prevStepStartIndex:', this.prevStepStartIndex);
-                    console.log('    app.audioPlayer exists:', !!this.app.audioPlayer);
-                    if (this.app.audioPlayer) {
-                        console.log('    current currentCueIndex:', this.app.audioPlayer.currentCueIndex);
-                        console.log('    comparison:', this.app.audioPlayer.currentCueIndex, '<', this.prevStepStartIndex);
-                        console.log('    result:', this.app.audioPlayer.currentCueIndex < this.prevStepStartIndex);
-                    }
-                    
-                    if (this.prevStepStartIndex === undefined) {
-                        console.log('    ❌ prevStepStartIndex is undefined');
-                        return false;
-                    }
-                    if (!this.app.audioPlayer) {
-                        console.log('    ❌ audioPlayer not available');
-                        return false;
-                    }
-                    const currentIndex = this.app.audioPlayer.currentCueIndex;
-                    
-                    // If we moved backward, great!
-                    if (currentIndex < this.prevStepStartIndex) {
-                        console.log('    ✅ Moved backward successfully');
-                        return true;
-                    }
-                    
-                    // If we're at index 0 and started at index 0, accept it
-                    if (this.prevStepStartIndex === 0 && currentIndex === 0) {
-                        console.log('    ✅ Already at first cue, shortcut executed correctly');
-                        return true;
-                    }
-                    
-                    console.log('    ❌ No backward movement detected');
-                    console.log('    Debug: startIndex=', this.prevStepStartIndex, 'currentIndex=', currentIndex);
-                    return false;
-                },
-                onStart: () => {
-                    // Store the starting index when this step begins
-                    if (this.app.audioPlayer) {
-                        this.prevStepStartIndex = this.app.audioPlayer.currentCueIndex;
-                    }
-                    // Ensure text input is NOT focused during keyboard shortcuts
-                    const userInput = document.getElementById('userInput');
-                    if (userInput) {
-                        userInput.blur();
-                        userInput.value = ''; // Clear any existing content
-                    }
-                },
-                onComplete: () => {
-                    // Play the new sentence after successful navigation
-                    setTimeout(() => {
-                        if (this.app.audioPlayer) {
-                            this.app.audioPlayer.playCurrentSentence();
-                        }
-                    }, 200);
-                }
-            },
-            {
-                id: 'speed-control',
-                title: 'Speed Control',
-                description: 'Click the speed button 3x to cycle through all speeds (100%, 75%, 50%).',
-                targetSelector: '#speedBtn',
-                highlightType: 'pulse',
-                action: 'click',
-                validation: () => {
-                    // Check if user has cycled through all three speeds
-                    if (!this.speedStatesVisited) {
-                        this.speedStatesVisited = new Set();
-                    }
-                    
-                    // Track the current speed state
-                    if (this.app.audioPlayer) {
-                        this.speedStatesVisited.add(this.app.audioPlayer.currentSpeed);
-                    }
-                    
-                    // Validation passes when user has seen all three states: 1.0, 0.75, 0.5
-                    return this.speedStatesVisited.has(1.0) && 
-                           this.speedStatesVisited.has(0.75) && 
-                           this.speedStatesVisited.has(0.5);
-                },
-                onInteraction: () => {
-                    // Initialize tracking if needed
-                    if (!this.speedStatesVisited) {
-                        this.speedStatesVisited = new Set();
-                    }
-                    // Track current speed and play sentence to demonstrate the speed change
-                    setTimeout(() => {
-                        if (this.app.audioPlayer) {
-                            this.speedStatesVisited.add(this.app.audioPlayer.currentSpeed);
-                            // Play the current sentence to demonstrate the speed change
-                            this.app.audioPlayer.playCurrentSentence();
-                        }
-                    }, 50);
-                }
-            },
-            {
-                id: 'keyboard-speed',
-                title: 'Keyboard Shortcut: Speed Control',
-                description: 'Press Shift + Cmd/Ctrl + ↓ (down arrow) to cycle through playback speeds.',
-                targetSelector: '#speedBtn',
-                highlightType: 'pulse',
-                action: 'keyboard',
-                keyCombo: ['Shift', 'Meta', 'ArrowDown'],
-                mobileHidden: true,
-                validation: () => {
-                    console.log('  🔍 VALIDATION DEBUG (keyboard-speed):');
-                    
-                    if (!this.speedStatesVisited) {
-                        this.speedStatesVisited = new Set();
-                    }
-                    
-                    // Track the current speed state
-                    if (this.app.audioPlayer) {
-                        this.speedStatesVisited.add(this.app.audioPlayer.currentSpeed);
-                        console.log('    current speed:', this.app.audioPlayer.currentSpeed);
-                        console.log('    visited speeds:', Array.from(this.speedStatesVisited));
-                    }
-                    
-                    // For this step, we just need to see that the user pressed the shortcut and changed the speed
-                    // We'll check if the speed changed from what it was when the step started
-                    const currentSpeed = this.app.audioPlayer ? this.app.audioPlayer.currentSpeed : 1.0;
-                    const speedChanged = this.keyboardSpeedStepStartSpeed !== undefined && 
-                                       currentSpeed !== this.keyboardSpeedStepStartSpeed;
-                    
-                    console.log('    start speed:', this.keyboardSpeedStepStartSpeed, 'current speed:', currentSpeed);
-                    console.log('    speed changed:', speedChanged);
-                    
-                    return speedChanged;
-                },
-                onStart: () => {
-                    // Store the starting speed for this step
-                    this.keyboardSpeedStepStartSpeed = this.app.audioPlayer ? this.app.audioPlayer.currentSpeed : 1.0;
-                    
-                    // Ensure text input is NOT focused during keyboard shortcuts
-                    const userInput = document.getElementById('userInput');
-                    if (userInput) {
-                        userInput.blur();
-                        userInput.value = ''; // Clear any existing content
-                    }
-                },
-                onComplete: () => {
-                    // Play sentence to demonstrate the new speed
-                    setTimeout(() => {
-                        if (this.app.audioPlayer) {
-                            this.app.audioPlayer.playCurrentSentence();
-                        }
-                    }, 200);
-                }
-            },
-            {
-                id: 'keyboard-play-current',
-                title: 'Keyboard Shortcut: Play/Repeat Current Sentence',
-                description: 'Press Shift + Cmd/Ctrl + ↑ (up arrow) to play/repeat the current sentence from the beginning.',
-                targetSelector: '#speedBtn', // Use speed button as visual reference
-                highlightType: 'pulse',
-                action: 'keyboard',
-                keyCombo: ['Shift', 'Meta', 'ArrowUp'],
-                mobileHidden: true,
-                validation: () => {
-                    console.log('  🔍 VALIDATION DEBUG (keyboard-play-current):');
-                    console.log('    app.audioPlayer exists:', !!this.app.audioPlayer);
-                    if (this.app.audioPlayer) {
-                        console.log('    isPlaying:', this.app.audioPlayer.isPlaying);
-                        console.log('    currentTime:', this.app.audioPlayer.audio ? this.app.audioPlayer.audio.currentTime : 'unknown');
-                    }
-                    
-                    // Check if audio is playing (indicating sentence was repeated)
-                    const result = this.app.audioPlayer && this.app.audioPlayer.isPlaying;
-                    console.log('    Final validation result:', result);
-                    return result;
-                },
-                onStart: () => {
-                    // Ensure text input is NOT focused during keyboard shortcuts
-                    const userInput = document.getElementById('userInput');
-                    if (userInput) {
-                        userInput.blur();
-                        userInput.value = ''; // Clear any existing content
-                    }
-                    // Ensure audio is paused so user can practice playing with keyboard shortcut
-                    if (this.app.audioPlayer && this.app.audioPlayer.isPlaying) {
-                        this.app.audioPlayer.pause();
-                    }
-                }
-            },
-            {
-                id: 'hint-button',
-                title: 'Hint System',
-                description: 'Click the "?" button to see the expected text for the current sentence.',
-                targetSelector: '#hintBtn',
-                highlightType: 'pulse',
-                action: 'click',
-                validation: () => {
-                    const hintDisplay = document.getElementById('hintDisplay');
-                    return hintDisplay && hintDisplay.style.display !== 'none';
-                },
-                onComplete: () => {
-                    // Add a delay so users can notice the hint before tutorial advances
-                    return new Promise(resolve => {
-                        setTimeout(resolve, 1500); // 1.5 second delay to notice the hint
-                    });
-                }
-            },
-            {
-                id: 'keyboard-hint',
-                title: 'Keyboard Shortcut: Hint System',
-                description: 'Press Shift + Cmd/Ctrl + ß (or / or ,) to show/hide the hint for the current sentence.',
-                targetSelector: '#hintBtn',
-                highlightType: 'pulse',
-                action: 'keyboard',
-                keyCombo: ['Shift', 'Meta', 'ß'],
-                mobileHidden: true,
-                validation: () => {
-                    console.log('  🔍 VALIDATION DEBUG (keyboard-hint):');
-                    
-                    const hintDisplay = document.getElementById('hintDisplay');
-                    console.log('    hintDisplay element exists:', !!hintDisplay);
-                    if (hintDisplay) {
-                        console.log('    hintDisplay style.display:', hintDisplay.style.display);
-                        console.log('    hintDisplay computed display:', window.getComputedStyle(hintDisplay).display);
-                    }
-                    
-                    // For keyboard hint validation, we want to check if the hint display state changed
-                    // We'll track if the hint was toggled from its initial state
-                    const isVisible = hintDisplay && hintDisplay.style.display !== 'none';
-                    const stateChanged = this.keyboardHintStepStartState !== undefined && 
-                                       isVisible !== this.keyboardHintStepStartState;
-                    
-                    console.log('    start state:', this.keyboardHintStepStartState, 'current visible:', isVisible);
-                    console.log('    state changed:', stateChanged);
-                    
-                    return stateChanged;
-                },
-                onStart: () => {
-                    // Store the starting hint display state
-                    const hintDisplay = document.getElementById('hintDisplay');
-                    this.keyboardHintStepStartState = hintDisplay && hintDisplay.style.display !== 'none';
-                    
-                    // Ensure text input is NOT focused during keyboard shortcuts
-                    const userInput = document.getElementById('userInput');
-                    if (userInput) {
-                        userInput.blur();
-                        userInput.value = ''; // Clear any existing content
-                    }
-                },
-                onComplete: () => {
-                    // Add a delay so users can notice the hint toggle before tutorial advances
-                    return new Promise(resolve => {
-                        setTimeout(resolve, 1500); // 1.5 second delay to notice the hint
-                    });
-                }
-            },
-            {
-                id: 'typing-practice-2',
-                title: 'Typing Practice 2',
-                description: 'Type "es ist" in lowercase in the text input area to demonstrate case sensitivity.',
-                targetSelector: '#userInput',
-                highlightType: 'pulse',
-                action: 'typing',
-                validation: () => {
-                    const userInput = document.getElementById('userInput');
-                    if (!userInput) return false;
-                    const value = userInput.value.toLowerCase();
-                    return value.includes('es ist');
-                },
-                onStart: () => {
-                    // Focus the text input when this step starts
-                    const userInput = document.getElementById('userInput');
-                    if (userInput) {
-                        userInput.focus();
-                    }
-                }
-                // Note: No onComplete callback - we want to keep the text visible for the Aa demo
-            },
-            {
-                id: 'case-sensitivity',
-                title: 'Case Sensitivity Toggle',
-                description: 'Click the "Aa" button to toggle case sensitivity on/off. Notice how this affects the text you just typed.',
-                targetSelector: '#ignoreCaseBtn',
-                highlightType: 'pulse',
-                action: 'click',
-                validation: () => {
-                    const btn = document.getElementById('ignoreCaseBtn');
-                    return btn && btn.classList.contains('active');
-                },
-                onComplete: () => {
-                    // Add a delay so users can process the case sensitivity change
-                    return new Promise(resolve => {
-                        setTimeout(resolve, 2000); // 2 second delay to notice the effect
-                    });
-                }
-            },
-            {
-                id: 'focus-mode',
-                title: 'Focus Mode',
-                description: 'Click the focus button to hide live feedback for concentrated practice.',
-                targetSelector: '#focusModeBtn',
-                highlightType: 'pulse',
-                action: 'click',
-                validation: () => {
-                    const btn = document.getElementById('focusModeBtn');
-                    return btn && btn.classList.contains('active');
-                },
-                onComplete: () => {
-                    // Add a delay so users can see the focus mode effect
-                    return new Promise(resolve => {
-                        setTimeout(resolve, 3000); // 3 second delay to notice the focus mode
-                    });
-                }
-            },
-            {
-                id: 'close-button',
-                title: 'End Dictation',
-                description: 'Click the "X" button to end the dictation session and see your results.',
-                targetSelector: '#endDictationBtn',
-                highlightType: 'pulse',
-                action: 'click',
-                validation: () => {
-                    // This step will be completed when the user clicks the end dictation button
-                    // We'll handle this specially in the click handler
-                    return false; // Never auto-complete, only through manual click
-                },
-                onStart: () => {
-                    // Mark this as the end dictation step for special handling
-                    this.isEndDictationStep = true;
-                },
-                onComplete: () => {
-                    // Don't actually end the dictation yet, advance to the next step instead
-                    this.isEndDictationStep = false;
-                }
-            },
-            {
-                id: 'export-options',
-                title: 'Export & Restart Options',
-                description: 'After ending dictation, you can access the Restart button (↻) to clear all text and start over, or the CSV Export button to download your progress. Try clicking on either button to see these features.',
-                targetSelector: '#restartBtn', // Start with restart button
-                highlightType: 'pulse',
-                action: 'click',
-                validation: () => {
-                    // This step completes when user clicks either restart or export button
-                    return this.exportOptionsInteracted;
-                },
-                onStart: () => {
-                    this.exportOptionsInteracted = false;
-                    // Make sure both buttons are visible by ensuring stats panel is shown
-                    this.tempHideTutorial = true;
-                    if (this.overlay) {
-                        this.overlay.style.display = 'none';
-                    }
-                },
-                onComplete: () => {
-                    // Show tutorial overlay again
-                    this.tempHideTutorial = false;
-                    if (this.overlay) {
-                        this.overlay.style.display = 'block';
-                    }
-                }
+       // In js/modules/tutorial.js, find the allSteps array and replace it with this reordered version:
+
+const allSteps = [
+    {
+        id: 'play-button',
+        title: 'Play Button',
+        description: 'Click the play button to start audio playback for the current sentence.',
+        targetSelector: '#playBtn',
+        highlightType: 'pulse',
+        action: 'click',
+        validation: () => this.app.audioPlayer && this.app.audioPlayer.isPlaying,
+        onComplete: () => {
+            // Let the audio play - don't pause it immediately
+            // The user will learn to pause it in the next step
+        }
+    },
+    {
+        id: 'pause-button',
+        title: 'Pause Button',
+        description: 'Click the play button once while audio is playing to pause it. Notice the green dot indicating paused state.',
+        targetSelector: '#playBtn',
+        highlightType: 'pulse',
+        action: 'click',
+        validation: () => this.app.audioPlayer && !this.app.audioPlayer.isPlaying
+    },
+    // Keyboard shortcut steps are hidden on mobile
+    {
+        id: 'keyboard-play',
+        title: 'Keyboard Shortcut: Play/Pause',
+        description: 'Press Shift + Cmd/Ctrl + Enter to play/pause audio. The green dot indicates that your audio is paused.',
+        targetSelector: '#playBtn',
+        highlightType: 'pulse',
+        action: 'keyboard',
+        keyCombo: ['Shift', 'Meta', 'Enter'], // Will handle cross-platform
+        mobileHidden: true,
+        validation: () => {
+            console.log('  🔍 VALIDATION DEBUG (keyboard-play):');
+            console.log('    app.audioPlayer exists:', !!this.app.audioPlayer);
+            if (this.app.audioPlayer) {
+                console.log('    isPlaying:', this.app.audioPlayer.isPlaying);
             }
-        ];
+            const result = this.app.audioPlayer && this.app.audioPlayer.isPlaying;
+            console.log('    Final validation result:', result);
+            return result;
+        },
+        onStart: () => {
+            // Ensure text input is NOT focused when this step starts
+            const userInput = document.getElementById('userInput');
+            if (userInput) {
+                userInput.blur();
+            }
+            // Ensure audio is paused first so user can practice continuing with keyboard shortcut
+            if (this.app.audioPlayer && this.app.audioPlayer.isPlaying) {
+                this.app.audioPlayer.pause();
+            }
+        }
+    },
+    {
+        id: 'typing-practice-1',
+        title: 'Repeat Sentence',
+        description: 'Double-click the play button quickly to repeat the current sentence from the beginning.',
+        targetSelector: '#playBtn',
+        highlightType: 'pulse',
+        action: 'doubleclick',
+        validation: () => {
+            // Check if audio is playing (indicating sentence was repeated)
+            return this.app.audioPlayer && this.app.audioPlayer.isPlaying;
+        },
+        onStart: () => {
+            this.doubleClickTracker = { clicks: 0, lastClickTime: 0 };
+            // Ensure audio is paused so user can practice double-clicking to repeat
+            if (this.app.audioPlayer && this.app.audioPlayer.isPlaying) {
+                this.app.audioPlayer.pause();
+            }
+        }
+    },
+    {
+        id: 'keyboard-play-current',
+        title: 'Keyboard Shortcut: Play/Repeat Current Sentence',
+        description: 'Press Shift + Cmd/Ctrl + ↑ (up arrow) to play/repeat the current sentence from the beginning.',
+        targetSelector: '#speedBtn', // Use speed button as visual reference
+        highlightType: 'pulse',
+        action: 'keyboard',
+        keyCombo: ['Shift', 'Meta', 'ArrowUp'],
+        mobileHidden: true,
+        validation: () => {
+            console.log('  🔍 VALIDATION DEBUG (keyboard-play-current):');
+            console.log('    app.audioPlayer exists:', !!this.app.audioPlayer);
+            if (this.app.audioPlayer) {
+                console.log('    isPlaying:', this.app.audioPlayer.isPlaying);
+                console.log('    currentTime:', this.app.audioPlayer.audio ? this.app.audioPlayer.audio.currentTime : 'unknown');
+            }
+            
+            // Check if audio is playing (indicating sentence was repeated)
+            const result = this.app.audioPlayer && this.app.audioPlayer.isPlaying;
+            console.log('    Final validation result:', result);
+            return result;
+        },
+        onStart: () => {
+            // Ensure text input is NOT focused during keyboard shortcuts
+            const userInput = document.getElementById('userInput');
+            if (userInput) {
+                userInput.blur();
+                userInput.value = ''; // Clear any existing content
+            }
+            // Ensure audio is paused so user can practice playing with keyboard shortcut
+            if (this.app.audioPlayer && this.app.audioPlayer.isPlaying) {
+                this.app.audioPlayer.pause();
+            }
+        }
+    },
+    {
+        id: 'next-sentence',
+        title: 'Next Sentence',
+        description: 'Click the right arrow to move to the next sentence. Observe the progress bar.',
+        targetSelector: '#nextBtn',
+        highlightType: 'pulse',
+        action: 'click',
+        validation: () => this.app.audioPlayer && this.app.audioPlayer.currentCueIndex > 0,
+        onInteraction: () => {
+            // Play the new sentence after navigation
+            setTimeout(() => {
+                if (this.app.audioPlayer) {
+                    this.app.audioPlayer.playCurrentSentence();
+                }
+            }, 100);
+        }
+    },
+    {
+        id: 'keyboard-next',
+        title: 'Keyboard Shortcut: Next Sentence',
+        description: 'Press Shift + Cmd/Ctrl + → (right arrow) to go to next sentence.',
+        targetSelector: '#nextBtn',
+        highlightType: 'pulse',
+        action: 'keyboard',
+        keyCombo: ['Shift', 'Meta', 'ArrowRight'],
+        mobileHidden: true,
+        validation: () => {
+            console.log('  🔍 VALIDATION DEBUG (keyboard-next):');
+            console.log('    currentStepStartIndex:', this.currentStepStartIndex);
+            console.log('    app.audioPlayer exists:', !!this.app.audioPlayer);
+            if (this.app.audioPlayer) {
+                console.log('    current currentCueIndex:', this.app.audioPlayer.currentCueIndex);
+                console.log('    total cues:', this.app.audioPlayer.vttCues ? this.app.audioPlayer.vttCues.length : 'unknown');
+                console.log('    comparison:', this.app.audioPlayer.currentCueIndex, '>', this.currentStepStartIndex);
+                console.log('    result:', this.app.audioPlayer.currentCueIndex > this.currentStepStartIndex);
+            }
+            
+            if (this.currentStepStartIndex === undefined) {
+                console.log('    ❌ currentStepStartIndex is undefined');
+                return false;
+            }
+            if (!this.app.audioPlayer) {
+                console.log('    ❌ audioPlayer not available');
+                return false;
+            }
+            const currentIndex = this.app.audioPlayer.currentCueIndex;
+            const totalCues = this.app.audioPlayer.vttCues ? this.app.audioPlayer.vttCues.length : 0;
+            
+            // If we moved forward, great!
+            if (currentIndex > this.currentStepStartIndex) {
+                console.log('    ✅ Moved forward successfully');
+                return true;
+            }
+            
+            // If we're at the last cue and started at the last cue, accept it
+            if (this.currentStepStartIndex >= totalCues - 1 && currentIndex >= totalCues - 1) {
+                console.log('    ✅ Already at last cue, shortcut executed correctly');
+                return true;
+            }
+            
+            console.log('    ❌ No forward movement detected');
+            console.log('    Debug: startIndex=', this.currentStepStartIndex, 'currentIndex=', currentIndex, 'totalCues=', totalCues);
+            return false;
+        },
+        onStart: () => {
+            // Store the starting index when this step begins
+            if (this.app.audioPlayer) {
+                this.currentStepStartIndex = this.app.audioPlayer.currentCueIndex;
+            }
+            // Ensure text input is NOT focused during keyboard shortcuts
+            const userInput = document.getElementById('userInput');
+            if (userInput) {
+                userInput.blur();
+                userInput.value = ''; // Clear any existing content
+            }
+        },
+        onComplete: () => {
+            // Play the new sentence after successful navigation
+            setTimeout(() => {
+                if (this.app.audioPlayer) {
+                    this.app.audioPlayer.playCurrentSentence();
+                }
+            }, 200);
+        }
+    },
+    {
+        id: 'prev-sentence',
+        title: 'Previous Sentence',
+        description: 'Click the left arrow to go back to the previous sentence. Observe the progress bar.',
+        targetSelector: '#prevBtn',
+        highlightType: 'pulse',
+        action: 'click',
+        validation: () => {
+            if (this.prevStepStartIndex === undefined) {
+                return false;
+            }
+            if (!this.app.audioPlayer) {
+                return false;
+            }
+            const currentIndex = this.app.audioPlayer.currentCueIndex;
+            
+            // If we moved backward, great!
+            if (currentIndex < this.prevStepStartIndex) {
+                return true;
+            }
+            
+            // If we're at index 0 and tried to go previous, accept it
+            if (this.prevStepStartIndex === 0 && currentIndex === 0) {
+                return true;
+            }
+            
+            return false;
+        },
+        onStart: () => {
+            // Store the starting index when this step begins
+            if (this.app.audioPlayer) {
+                this.prevStepStartIndex = this.app.audioPlayer.currentCueIndex;
+            }
+        },
+        onInteraction: () => {
+            // Play the new sentence after navigation
+            setTimeout(() => {
+                if (this.app.audioPlayer) {
+                    this.app.audioPlayer.playCurrentSentence();
+                }
+            }, 100);
+        }
+    },
+    {
+        id: 'keyboard-prev',
+        title: 'Keyboard Shortcut: Previous Sentence',
+        description: 'Press Shift + Cmd/Ctrl + ← (left arrow) to go to previous sentence.',
+        targetSelector: '#prevBtn',
+        highlightType: 'pulse',
+        action: 'keyboard',
+        keyCombo: ['Shift', 'Meta', 'ArrowLeft'],
+        mobileHidden: true,
+        validation: () => {
+            console.log('  🔍 VALIDATION DEBUG (keyboard-prev):');
+            console.log('    prevStepStartIndex:', this.prevStepStartIndex);
+            console.log('    app.audioPlayer exists:', !!this.app.audioPlayer);
+            if (this.app.audioPlayer) {
+                console.log('    current currentCueIndex:', this.app.audioPlayer.currentCueIndex);
+                console.log('    comparison:', this.app.audioPlayer.currentCueIndex, '<', this.prevStepStartIndex);
+                console.log('    result:', this.app.audioPlayer.currentCueIndex < this.prevStepStartIndex);
+            }
+            
+            if (this.prevStepStartIndex === undefined) {
+                console.log('    ❌ prevStepStartIndex is undefined');
+                return false;
+            }
+            if (!this.app.audioPlayer) {
+                console.log('    ❌ audioPlayer not available');
+                return false;
+            }
+            const currentIndex = this.app.audioPlayer.currentCueIndex;
+            
+            // If we moved backward, great!
+            if (currentIndex < this.prevStepStartIndex) {
+                console.log('    ✅ Moved backward successfully');
+                return true;
+            }
+            
+            // If we're at index 0 and started at index 0, accept it
+            if (this.prevStepStartIndex === 0 && currentIndex === 0) {
+                console.log('    ✅ Already at first cue, shortcut executed correctly');
+                return true;
+            }
+            
+            console.log('    ❌ No backward movement detected');
+            console.log('    Debug: startIndex=', this.prevStepStartIndex, 'currentIndex=', currentIndex);
+            return false;
+        },
+        onStart: () => {
+            // Store the starting index when this step begins
+            if (this.app.audioPlayer) {
+                this.prevStepStartIndex = this.app.audioPlayer.currentCueIndex;
+            }
+            // Ensure text input is NOT focused during keyboard shortcuts
+            const userInput = document.getElementById('userInput');
+            if (userInput) {
+                userInput.blur();
+                userInput.value = ''; // Clear any existing content
+            }
+        },
+        onComplete: () => {
+            // Play the new sentence after successful navigation
+            setTimeout(() => {
+                if (this.app.audioPlayer) {
+                    this.app.audioPlayer.playCurrentSentence();
+                }
+            }, 200);
+        }
+    },
+    {
+        id: 'speed-control',
+        title: 'Speed Control',
+        description: 'Click the speed button 3x to cycle through all speeds (100%, 75%, 50%).',
+        targetSelector: '#speedBtn',
+        highlightType: 'pulse',
+        action: 'click',
+        validation: () => {
+            // Check if user has cycled through all three speeds
+            if (!this.speedStatesVisited) {
+                this.speedStatesVisited = new Set();
+            }
+            
+            // Track the current speed state
+            if (this.app.audioPlayer) {
+                this.speedStatesVisited.add(this.app.audioPlayer.currentSpeed);
+            }
+            
+            // Validation passes when user has seen all three states: 1.0, 0.75, 0.5
+            return this.speedStatesVisited.has(1.0) && 
+                   this.speedStatesVisited.has(0.75) && 
+                   this.speedStatesVisited.has(0.5);
+        },
+        onInteraction: () => {
+            // Initialize tracking if needed
+            if (!this.speedStatesVisited) {
+                this.speedStatesVisited = new Set();
+            }
+            // Track current speed and play sentence to demonstrate the speed change
+            setTimeout(() => {
+                if (this.app.audioPlayer) {
+                    this.speedStatesVisited.add(this.app.audioPlayer.currentSpeed);
+                    // Play the current sentence to demonstrate the speed change
+                    this.app.audioPlayer.playCurrentSentence();
+                }
+            }, 50);
+        }
+    },
+    {
+        id: 'keyboard-speed',
+        title: 'Keyboard Shortcut: Speed Control',
+        description: 'Press Shift + Cmd/Ctrl + ↓ (down arrow) to cycle through playback speeds.',
+        targetSelector: '#speedBtn',
+        highlightType: 'pulse',
+        action: 'keyboard',
+        keyCombo: ['Shift', 'Meta', 'ArrowDown'],
+        mobileHidden: true,
+        validation: () => {
+            console.log('  🔍 VALIDATION DEBUG (keyboard-speed):');
+            
+            if (!this.speedStatesVisited) {
+                this.speedStatesVisited = new Set();
+            }
+            
+            // Track the current speed state
+            if (this.app.audioPlayer) {
+                this.speedStatesVisited.add(this.app.audioPlayer.currentSpeed);
+                console.log('    current speed:', this.app.audioPlayer.currentSpeed);
+                console.log('    visited speeds:', Array.from(this.speedStatesVisited));
+            }
+            
+            // For this step, we just need to see that the user pressed the shortcut and changed the speed
+            // We'll check if the speed changed from what it was when the step started
+            const currentSpeed = this.app.audioPlayer ? this.app.audioPlayer.currentSpeed : 1.0;
+            const speedChanged = this.keyboardSpeedStepStartSpeed !== undefined && 
+                               currentSpeed !== this.keyboardSpeedStepStartSpeed;
+            
+            console.log('    start speed:', this.keyboardSpeedStepStartSpeed, 'current speed:', currentSpeed);
+            console.log('    speed changed:', speedChanged);
+            
+            return speedChanged;
+        },
+        onStart: () => {
+            // Store the starting speed for this step
+            this.keyboardSpeedStepStartSpeed = this.app.audioPlayer ? this.app.audioPlayer.currentSpeed : 1.0;
+            
+            // Ensure text input is NOT focused during keyboard shortcuts
+            const userInput = document.getElementById('userInput');
+            if (userInput) {
+                userInput.blur();
+                userInput.value = ''; // Clear any existing content
+            }
+        },
+        onComplete: () => {
+            // Play sentence to demonstrate the new speed
+            setTimeout(() => {
+                if (this.app.audioPlayer) {
+                    this.app.audioPlayer.playCurrentSentence();
+                }
+            }, 200);
+        }
+    },
+    {
+        id: 'hint-button',
+        title: 'Hint System',
+        description: 'Click the "?" button to see the expected text for the current sentence.',
+        targetSelector: '#hintBtn',
+        highlightType: 'pulse',
+        action: 'click',
+        validation: () => {
+            const hintDisplay = document.getElementById('hintDisplay');
+            return hintDisplay && hintDisplay.style.display !== 'none';
+        },
+        onComplete: () => {
+            // Add a delay so users can notice the hint before tutorial advances
+            return new Promise(resolve => {
+                setTimeout(resolve, 1500); // 1.5 second delay to notice the hint
+            });
+        }
+    },
+    {
+        id: 'keyboard-hint',
+        title: 'Keyboard Shortcut: Hint System',
+        description: 'Press Shift + Cmd/Ctrl + ß (or / or ,) to show/hide the hint for the current sentence.',
+        targetSelector: '#hintBtn',
+        highlightType: 'pulse',
+        action: 'keyboard',
+        keyCombo: ['Shift', 'Meta', 'ß'],
+        mobileHidden: true,
+        validation: () => {
+            console.log('  🔍 VALIDATION DEBUG (keyboard-hint):');
+            
+            const hintDisplay = document.getElementById('hintDisplay');
+            console.log('    hintDisplay element exists:', !!hintDisplay);
+            if (hintDisplay) {
+                console.log('    hintDisplay style.display:', hintDisplay.style.display);
+                console.log('    hintDisplay computed display:', window.getComputedStyle(hintDisplay).display);
+            }
+            
+            // For keyboard hint validation, we want to check if the hint display state changed
+            // We'll track if the hint was toggled from its initial state
+            const isVisible = hintDisplay && hintDisplay.style.display !== 'none';
+            const stateChanged = this.keyboardHintStepStartState !== undefined && 
+                               isVisible !== this.keyboardHintStepStartState;
+            
+            console.log('    start state:', this.keyboardHintStepStartState, 'current visible:', isVisible);
+            console.log('    state changed:', stateChanged);
+            
+            return stateChanged;
+        },
+        onStart: () => {
+            // Store the starting hint display state
+            const hintDisplay = document.getElementById('hintDisplay');
+            this.keyboardHintStepStartState = hintDisplay && hintDisplay.style.display !== 'none';
+            
+            // Ensure text input is NOT focused during keyboard shortcuts
+            const userInput = document.getElementById('userInput');
+            if (userInput) {
+                userInput.blur();
+                userInput.value = ''; // Clear any existing content
+            }
+        },
+        onComplete: () => {
+            // Add a delay so users can notice the hint toggle before tutorial advances
+            return new Promise(resolve => {
+                setTimeout(resolve, 1500); // 1.5 second delay to notice the hint
+            });
+        }
+    },
+    {
+        id: 'typing-practice-2',
+        title: 'Typing Practice 2',
+        description: 'Type "es ist" in lowercase in the text input area to demonstrate case sensitivity.',
+        targetSelector: '#userInput',
+        highlightType: 'pulse',
+        action: 'typing',
+        validation: () => {
+            const userInput = document.getElementById('userInput');
+            if (!userInput) return false;
+            const value = userInput.value.toLowerCase();
+            return value.includes('es ist');
+        },
+        onStart: () => {
+            // Focus the text input when this step starts
+            const userInput = document.getElementById('userInput');
+            if (userInput) {
+                userInput.focus();
+            }
+        }
+        // Note: No onComplete callback - we want to keep the text visible for the Aa demo
+    },
+    {
+        id: 'case-sensitivity',
+        title: 'Case Sensitivity Toggle',
+        description: 'Click the "Aa" button to toggle case sensitivity on/off. Notice how this affects the text you just typed.',
+        targetSelector: '#ignoreCaseBtn',
+        highlightType: 'pulse',
+        action: 'click',
+        validation: () => {
+            const btn = document.getElementById('ignoreCaseBtn');
+            return btn && btn.classList.contains('active');
+        },
+        onComplete: () => {
+            // Add a delay so users can process the case sensitivity change
+            return new Promise(resolve => {
+                setTimeout(resolve, 2000); // 2 second delay to notice the effect
+            });
+        }
+    },
+    {
+        id: 'focus-mode',
+        title: 'Focus Mode',
+        description: 'Click the focus button to hide live feedback for concentrated practice.',
+        targetSelector: '#focusModeBtn',
+        highlightType: 'pulse',
+        action: 'click',
+        validation: () => {
+            const btn = document.getElementById('focusModeBtn');
+            return btn && btn.classList.contains('active');
+        },
+        onComplete: () => {
+            // Add a delay so users can see the focus mode effect
+            return new Promise(resolve => {
+                setTimeout(resolve, 3000); // 3 second delay to notice the focus mode
+            });
+        }
+    },
+    {
+        id: 'close-button',
+        title: 'End Dictation',
+        description: 'Click the "X" button to end the dictation session and see your results.',
+        targetSelector: '#endDictationBtn',
+        highlightType: 'pulse',
+        action: 'click',
+        validation: () => {
+            // This step will be completed when the user clicks the end dictation button
+            // We'll handle this specially in the click handler
+            return false; // Never auto-complete, only through manual click
+        },
+        onStart: () => {
+            // Mark this as the end dictation step for special handling
+            this.isEndDictationStep = true;
+        },
+        onComplete: () => {
+            // Don't actually end the dictation yet, advance to the next step instead
+            this.isEndDictationStep = false;
+        }
+    },
+    {
+        id: 'export-options',
+        title: 'Export & Restart Options',
+        description: 'After ending dictation, you can access the Restart button (↻) to clear all text and start over, or the CSV Export button to download your progress. Try clicking on either button to see these features.',
+        targetSelector: '#restartBtn', // Start with restart button
+        highlightType: 'pulse',
+        action: 'click',
+        validation: () => {
+            // This step completes when user clicks either restart or export button
+            return this.exportOptionsInteracted;
+        },
+        onStart: () => {
+            this.exportOptionsInteracted = false;
+            // Make sure both buttons are visible by ensuring stats panel is shown
+            this.tempHideTutorial = true;
+            if (this.overlay) {
+                this.overlay.style.display = 'none';
+            }
+        },
+        onComplete: () => {
+            // Show tutorial overlay again
+            this.tempHideTutorial = false;
+            if (this.overlay) {
+                this.overlay.style.display = 'block';
+            }
+        }
+    }
+];
 
         // Filter out keyboard shortcut steps on mobile
         this.steps = allSteps.filter(step => {
