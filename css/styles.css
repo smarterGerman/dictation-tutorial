@@ -653,6 +653,9 @@ body {
     position: relative;
     white-space: pre; /* Preserve spaces in underscores */
     font-weight: 500;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+    font-size: 18px !important;
+    letter-spacing: normal !important;
 }
 
 .result-word-missing:hover {

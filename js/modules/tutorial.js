@@ -806,6 +806,9 @@ const allSteps = [
         // Update button states
         if (prevBtn) prevBtn.disabled = this.currentStep === 0;
         if (nextBtn) {
+            // Hide the Next button only on the 'End Dictation' step (slide 17, id: 'close-button')
+            const isEndDictationStep = step.id === 'close-button';
+            nextBtn.style.display = isEndDictationStep ? 'none' : '';
             nextBtn.disabled = false;
             nextBtn.textContent = this.currentStep === this.steps.length - 1 ? 'Finish' : 'Next';
         }
