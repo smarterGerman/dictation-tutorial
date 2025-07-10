@@ -1199,23 +1199,26 @@ if (currentStep.id === 'close-button') {
             console.log('  ✅ Tutorial: Key combo matched! Executing the actual shortcut action...');
 
             // Only set validatingKeyboardStep to true for 'keyboard' action steps
-                // This prevents other global handlers (like for input) from interfering
-                if (currentStep.action === 'keyboard') {
-                    this.validatingKeyboardStep = true;
-                    console.log('  🔒 Validation flag set to:', this.validatingKeyboardStep); // For debug
-                }
-            // Note: No need to block subsequent keypresses - we want to allow fast cycling
-            // through keyboard shortcuts without waiting for validation to complete
-            
+            if (currentStep.action === 'keyboard') {
+                this.validatingKeyboardStep = true;
+                console.log('  🔒 Validation flag set to:', this.validatingKeyboardStep); // For debug
+            }
+
+            // Special handling for keyboard-speed step: let executeKeyboardShortcutAction handle validation
+            if (currentStep.id === 'keyboard-speed') {
+                this.executeKeyboardShortcutAction(currentStep.keyCombo);
+                // Do not call onInteraction or schedule validation here
+                return;
+            }
+
+            // For all other steps:
             // Execute the actual keyboard shortcut action first
             this.executeKeyboardShortcutAction(currentStep.keyCombo);
-            
+
             // Call onInteraction if it exists (just like mouse clicks do)
             console.log('🎯 Checking for onInteraction:', !!currentStep.onInteraction);
-
             if (currentStep.onInteraction) {
                 console.log('🎯 Calling onInteraction now!');
-
                 currentStep.onInteraction();
             }
 
@@ -1239,11 +1242,9 @@ if (currentStep.id === 'close-button') {
                             } else {
                                 console.log('  ❌ Step validation failed even on retry');
                                 console.log('  🔓 Validation flag reset to:', this.validatingKeyboardStep);
-
                             }
                         }, 200);
                     }
-                } else {
                 }
             }, 150);
         } else {
@@ -1642,15 +1643,14 @@ if (currentStep.id === 'close-button') {
             console.log('  ⚡ Executing speed toggle action');
             // Toggle the speed
             this.app.audioPlayer.toggleSpeed();
-            setTimeout(() => {
-                if (!this.speedStatesVisited) this.speedStatesVisited = new Set();
-                this.speedStatesVisited.add(this.app.audioPlayer.currentSpeed);
-                // Immediately trigger validation after updating the set
-                const currentStep = this.steps[this.currentStep];
-                if (currentStep && currentStep.validation && currentStep.validation()) {
-                    this.stepCompleted();
-                }
-            }, 0);
+            // Patch: Always update speedStatesVisited and validate immediately after speed change
+            if (!this.speedStatesVisited) this.speedStatesVisited = new Set();
+            this.speedStatesVisited.add(this.app.audioPlayer.currentSpeed);
+            // Immediately trigger validation after updating the set
+            const currentStep = this.steps[this.currentStep];
+            if (currentStep && currentStep.id === 'keyboard-speed' && currentStep.validation && currentStep.validation()) {
+                this.stepCompleted();
+            }
             this.app.audioPlayer.playCurrentSentence();
         } else if (comboStr.includes('ß') || comboStr.includes('/') || comboStr.includes(',')) {
             // Hint toggle shortcut
