@@ -1198,8 +1198,14 @@ if (currentStep.id === 'close-button') {
             event.stopPropagation();
             console.log('  ✅ Tutorial: Key combo matched! Executing the actual shortcut action...');
 
-            // Allow multiple keypresses for speed cycling - don't block
-            // this.validatingKeyboardStep = true;  // REMOVED - was blocking subsequent keypresses
+            // Only set validatingKeyboardStep to true for 'keyboard' action steps
+                // This prevents other global handlers (like for input) from interfering
+                if (currentStep.action === 'keyboard') {
+                    this.validatingKeyboardStep = true;
+                    console.log('  🔒 Validation flag set to:', this.validatingKeyboardStep); // For debug
+                }
+            // Note: No need to block subsequent keypresses - we want to allow fast cycling
+            // through keyboard shortcuts without waiting for validation to complete
             
             // Execute the actual keyboard shortcut action first
             this.executeKeyboardShortcutAction(currentStep.keyCombo);
@@ -1614,7 +1620,7 @@ if (currentStep.id === 'close-button') {
         const comboStr = keyCombo.join('+').toLowerCase();
         
         console.log('  🎬 Executing keyboard shortcut action for:', comboStr);
-        
+
         if (comboStr.includes('enter')) {
             // Play/Pause shortcut
             console.log('  ▶️ Executing play/pause action');
@@ -1632,23 +1638,24 @@ if (currentStep.id === 'close-button') {
             console.log('  🔄 Executing play current sentence action');
             this.app.audioPlayer.playCurrentSentence();
        } else if (comboStr.includes('arrowdown')) {
-    // Speed toggle shortcut
-    console.log('  ⚡ Executing speed toggle action');
-    
-    // Toggle the speed
-    this.app.audioPlayer.toggleSpeed();
-    this.app.audioPlayer.playCurrentSentence();
-
-} else if (comboStr.includes('ß') || comboStr.includes('/') || comboStr.includes(',')) {
-    // Hint toggle shortcut
-    console.log('  💡 Executing hint toggle action');
-    // Find and click the hint button
-    const hintBtn = document.getElementById('hintBtn');
-    if (hintBtn) {
-        hintBtn.click();
-    }
-} else {
-    console.log('  ❓ Unknown keyboard shortcut action for:', comboStr);
-}
+            // Speed toggle shortcut
+            console.log('  ⚡ Executing speed toggle action');
+            // Toggle the speed
+            this.app.audioPlayer.toggleSpeed();
+            this.app.audioPlayer.playCurrentSentence();
+            // --- FIX: Always update speedStatesVisited after toggling speed ---
+            if (!this.speedStatesVisited) this.speedStatesVisited = new Set();
+            this.speedStatesVisited.add(this.app.audioPlayer.currentSpeed);
+        } else if (comboStr.includes('ß') || comboStr.includes('/') || comboStr.includes(',')) {
+            // Hint toggle shortcut
+            console.log('  💡 Executing hint toggle action');
+            // Find and click the hint button
+            const hintBtn = document.getElementById('hintBtn');
+            if (hintBtn) {
+                hintBtn.click();
+            }
+        } else {
+            console.log('  ❓ Unknown keyboard shortcut action for:', comboStr);
+        }
     }
 }
