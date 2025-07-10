@@ -754,20 +754,21 @@ body {
    ======================================== */
 
 /* Tutorial Overlay */
+
 .tutorial-overlay {
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
+    width: 100vw;
+    height: 100vh;
     background: none;
-    z-index: 10000;
+    z-index: 20000;
     display: flex;
-    align-items: center;
-    justify-content: flex-end; /* Move to right side */
-    padding-right: 20px; /* Some margin from edge */
-    animation: tutorialFadeIn 0.3s ease-out;
+    align-items: flex-end;
+    justify-content: flex-end;
     pointer-events: none;
+    padding: 0;
+    animation: tutorialFadeIn 0.3s ease-out;
 }
 
 @keyframes tutorialFadeIn {
@@ -776,24 +777,21 @@ body {
 }
 
 /* Tutorial Container */
+/* Floating tutorial container with margin from bottom/right */
 .tutorial-container {
     background: white;
     border-radius: 16px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    width: 400px; /* Fixed width instead of max-width */
+    width: 400px;
     min-height: 200px;
     max-height: 70vh;
     overflow: hidden;
-    /* CHANGED: Fixed positioning instead of relative */
-    position: fixed;
-    bottom: 40px;
-    right: 40px;
-    /* ADDED: Transform origin for expanding up/left */
+    position: relative;
+    margin: 0 40px 40px 0;
     transform-origin: bottom right;
     transition: height 0.2s ease-out;
     animation: tutorialSlideIn 0.4s ease-out;
     pointer-events: all;
-    /* ADDED: Flex layout for fixed button positioning */
     display: flex;
     flex-direction: column;
 }
