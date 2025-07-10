@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dictation Tool Keyboard Shortcuts</title>
+  <style>
+    body {
+      background: #f7f7fa;
+      font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .dt-shortcut-btn {
+      background: linear-gradient(90deg, #ffebee 0%, #fff3e0 20%, #fffde7 40%, #e8f5e9 60%, #e3f2fd 80%, #ede7f6 100%);
+      color: #2d3a4a;
+      border: 1px solid #e3e6ee;
+      border-radius: 8px;
+      padding: 0.3em 0.7em;
+      font-size: 1.2rem;
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+      margin: 0 auto 1.2em auto;
+      display: block;
+      transition: background 0.2s;
+      z-index: 9999;
+      outline: none;
+      line-height: 1;
+      border-style: solid;
+    }
+    .dt-shortcut-btn:focus {
+      outline: 2px solid #1976d2;
+      outline-offset: 2px;
+    }
+    .dt-shortcut-box {
+      background: #f7f7fa;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.07);
+      padding: 1.2rem 1.1rem 1.1rem 1.1rem;
+      max-width: 340px;
+      width: 100%;
+      border: 1px solid #e3e6ee;
+      position: relative;
+      z-index: 9999;
+    }
+    .dt-shortcut-box h2 {
+      margin-top: 0;
+      font-size: 1.18rem;
+      color: #2d3a4a;
+      letter-spacing: 0.01em;
+      text-align: center;
+      margin-bottom: 0.7em;
+      font-weight: 600;
+    }
+    .dt-shortcut-box .shortcut-list {
+      list-style: none;
+      padding: 0;
+      margin: 0.2rem 0 0 0;
+    }
+    .dt-shortcut-box .shortcut-list li {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.32em 0.1em;
+      border-bottom: 1px solid #f3f4f8;
+      font-size: 0.98rem;
+      min-height: 2.1em;
+      transition: background 0.2s;
+    }
+    /* Rainbow order: Red, Orange, Yellow, Green, Blue, Indigo, Violet */
+    .dt-shortcut-box .shortcut-list li:nth-child(1) .shortcut-key { background: #ffebee; color: #d32f2f; border-color: #ffcdd2; }   /* Red */
+    .dt-shortcut-box .shortcut-list li:nth-child(2) .shortcut-key { background: #fff3e0; color: #ef6c00; border-color: #ffe0b2; }   /* Orange */
+    .dt-shortcut-box .shortcut-list li:nth-child(3) .shortcut-key { background: #fffde7; color: #fbc02d; border-color: #fff9c4; }   /* Yellow */
+    .dt-shortcut-box .shortcut-list li:nth-child(4) .shortcut-key { background: #e8f5e9; color: #388e3c; border-color: #c8e6c9; }   /* Green */
+    .dt-shortcut-box .shortcut-list li:nth-child(5) .shortcut-key { background: #e3f2fd; color: #1976d2; border-color: #bbdefb; }   /* Blue */
+    .dt-shortcut-box .shortcut-list li:nth-child(6) .shortcut-key { background: #ede7f6; color: #512da8; border-color: #d1c4e9; }   /* Indigo */
+    .dt-shortcut-box .shortcut-list li:nth-child(7) .shortcut-key { background: #f3e5f5; color: #8e24aa; border-color: #ce93d8; }   /* Violet */
+    .dt-shortcut-box .shortcut-list li:last-child {
+      border-bottom: none;
+    }
+    .dt-shortcut-box .shortcut-key {
+      background: #f4f6fb;
+      color: #2d3a4a;
+      border-radius: 4px;
+      padding: 0.13em 0.7em;
+      font-family: 'Menlo', 'Consolas', monospace;
+      font-size: 0.97rem;
+      margin-left: 0.7em;
+      border: 1px solid #e3e6ee;
+      box-shadow: 0 1px 1.5px rgba(60,60,100,0.03);
+      white-space: nowrap;
+    }
+    .dt-shortcut-box .shortcut-desc {
+      color: #3a3a3a;
+      flex: 1;
+      font-size: 0.97rem;
+      padding-right: 0.5em;
+    }
+    @media (max-width: 500px) {
+      .dt-shortcut-box {
+        padding: 0.7rem 0.2rem;
+        max-width: 99vw;
+      }
+      .dt-shortcut-box .shortcut-list li {
+        font-size: 0.93rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <button id="show-shortcuts" class="dt-shortcut-btn" aria-label="Show shortcuts">
+    <svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;">
+      <circle cx="6" cy="6" r="3.2" stroke="#d32f2f" stroke-width="1.6" fill="#fff"/>
+      <circle cx="16" cy="16" r="3.2" stroke="#1976d2" stroke-width="1.6" fill="#fff"/>
+      <line x1="7.8" y1="7.8" x2="14.2" y2="14.2" stroke="#888" stroke-width="1.6"/>
+      <line x1="7.8" y1="14.2" x2="14.2" y2="7.8" stroke="#888" stroke-width="1.6"/>
+    </svg>
+  </button>
+  <div class="infobox dt-shortcut-box" id="shortcuts-box" style="display:none;">
+    <h2>Keyboard Shortcuts</h2>
+    <ul class="shortcut-list">
+      <li><span class="shortcut-desc">Play/Pause</span><span class="shortcut-key">Shift + Cmd/Ctrl + Enter</span></li>
+      <li><span class="shortcut-desc">Back</span><span class="shortcut-key">Shift + Cmd/Ctrl + ←</span></li>
+      <li><span class="shortcut-desc">Forward</span><span class="shortcut-key">Shift + Cmd/Ctrl + →</span></li>
+      <li><span class="shortcut-desc">Repeat</span><span class="shortcut-key">Shift + Cmd/Ctrl + ↑</span></li>
+      <li><span class="shortcut-desc">Change speed</span><span class="shortcut-key">Shift + Cmd/Ctrl + ↓</span></li>
+      <li><span class="shortcut-desc">Help</span><span class="shortcut-key">Shift + Cmd/Ctrl + /</span></li>
+      <li><span class="shortcut-desc">Submit text</span><span class="shortcut-key">Enter</span></li>
+    </ul>
+  </div>
+  <script>
+    const btn = document.getElementById('show-shortcuts');
+    const box = document.getElementById('shortcuts-box');
+    btn.addEventListener('click', function() {
+      if (box.style.display === 'none') {
+        box.style.display = 'block';
+        btn.innerHTML = '✕';
+      } else {
+        box.style.display = 'none';
+        btn.innerHTML = `<svg width="22" height="22" viewBox="0 0 22 22" fill="none" xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;"><circle cx="6" cy="6" r="3.2" stroke="#d32f2f" stroke-width="1.6" fill="#fff"/><circle cx="16" cy="16" r="3.2" stroke="#1976d2" stroke-width="1.6" fill="#fff"/><line x1="7.8" y1="7.8" x2="14.2" y2="14.2" stroke="#888" stroke-width="1.6"/><line x1="7.8" y1="14.2" x2="14.2" y2="7.8" stroke="#888" stroke-width="1.6"/></svg>`;
+      }
+    });
+  </script>
+</body>
+</html>
