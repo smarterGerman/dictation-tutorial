@@ -341,7 +341,7 @@ export class DictationApp {
         if (sessionResults.length === 0 && window.activeTutorial) {
             // Use a known reference from the lesson if available, else fallback
             let referenceText = 'es ist ein Test';
-            let dummyInput = 'es ist a';
+            let dummyInput = 'es ist ';
             try {
                 const lessonId = this.state.getLessonId && this.state.getLessonId();
                 if (lessonId && this.lessonLoader && this.lessonLoader.hasLessons()) {
