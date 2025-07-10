@@ -782,8 +782,8 @@ body {
     width: auto;
     min-width: 280px;
     min-height: unset;
-    max-height: 70vh;
-    overflow: hidden;
+    max-height: none;
+    overflow: visible;
     position: fixed;
     margin: 0;
     transform-origin: bottom right;
@@ -866,7 +866,7 @@ body {
 
 /* Tutorial Content */
 .tutorial-content {
-    padding: 20px 24px;
+    padding: 10px 16px 8px 16px;
 }
 
 .step-title {
