@@ -1220,7 +1220,6 @@ if (currentStep.id === 'close-button') {
                     console.log('  Validation result:', validationResult);
                     if (validationResult) {
                         console.log('  ✅ Step completed successfully!');
-                        this.validatingKeyboardStep = false;
                         this.stepCompleted();
                     } else {
                         console.log('  ⏳ Validation failed, trying again in 200ms...');
@@ -1230,18 +1229,15 @@ if (currentStep.id === 'close-button') {
                             console.log('  Retry validation result:', retryResult);
                             if (retryResult) {
                                 console.log('  ✅ Step completed on retry!');
-                                this.validatingKeyboardStep = false;
                                 this.stepCompleted();
                             } else {
                                 console.log('  ❌ Step validation failed even on retry');
-                                this.validatingKeyboardStep = false;
                                 console.log('  🔓 Validation flag reset to:', this.validatingKeyboardStep);
 
                             }
                         }, 200);
                     }
                 } else {
-                    this.validatingKeyboardStep = false;
                 }
             }, 150);
         } else {
@@ -1368,6 +1364,9 @@ if (currentStep.id === 'close-button') {
         console.log('🎯 Step completed. Current step:', this.currentStep, 'Total steps:', this.steps.length);
 
         const currentStep = this.steps[this.currentStep];
+
+        // Reset the keyboard validation flag if it was active for this step
+        this.validatingKeyboardStep = false; //
         
         // Remove highlight immediately when step is completed
         this.removeHighlight();
