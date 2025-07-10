@@ -320,14 +320,12 @@ export class DictationApp {
     showFinalResult() {
         
         const userInput = this.uiControls.getUserInput();
-        
         // If there's text in the current sentence and it hasn't been processed yet
         const currentIndex = this.state.getCurrentCueIndex();
         const sessionResults = this.statistics.getSessionResults();
-        
+
         if (userInput.trim() && sessionResults.length === currentIndex) {
             const referenceText = this.state.getReferenceText();
-            
             this.statistics.recordSentenceResult(
                 currentIndex,
                 referenceText,
@@ -338,16 +336,38 @@ export class DictationApp {
                 }
             );
         }
-        
+
+        // If there is no user data at all, inject dummy data for tutorial results screen
+        if (sessionResults.length === 0 && window.activeTutorial) {
+            // Use a known reference from the lesson if available, else fallback
+            let referenceText = 'es ist ein Test';
+            let dummyInput = 'es ist a';
+            try {
+                const lessonId = this.state.getLessonId && this.state.getLessonId();
+                if (lessonId && this.lessonLoader && this.lessonLoader.hasLessons()) {
+                    const lesson = this.lessonLoader.getLessonData(lessonId);
+                    if (lesson && lesson.sentences && lesson.sentences[0]) {
+                        referenceText = lesson.sentences[0].text || referenceText;
+                    }
+                }
+            } catch (e) {}
+            this.statistics.recordSentenceResult(
+                0,
+                referenceText,
+                dummyInput,
+                { ignoreCase: true, ignorePunctuation: true }
+            );
+        }
+
         // Show final statistics
         const stats = this.statistics.showFinalResults();
         this.state.showStats();
-        
+
         // Setup export functionality
         this.setupExportHandlers();
-        
+
         setTimeout(() => this.autoResize.triggerResize(), 100);
-        
+
         return stats;
     }
     

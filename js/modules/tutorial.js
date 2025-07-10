@@ -26,6 +26,7 @@ export class Tutorial {
        // In js/modules/tutorial.js, find the allSteps array and replace it with this reordered version:
 
 const allSteps = [
+    // ...existing steps...
     {
         id: 'play-button',
         title: 'Play Button',
@@ -374,7 +375,7 @@ const allSteps = [
    {
     id: 'keyboard-speed',
     title: 'Keyboard Shortcut: Speed Control',
-        description: 'Press Shift + Cmd/Ctrl + ↓ (down arrow) exactly 3 times to cycle: 100% → 75% → 50% → 100%. Audio will restart each time to demonstrate the speed.',
+        description: 'Press Shift + Cmd/Ctrl + ↓ (down arrow) to cycle: 100% → 75% → 50% → 100%. Audio will slow down accordingly.',
     targetSelector: '#speedBtn',
     highlightType: 'pulse',
     action: 'keyboard',
@@ -419,11 +420,8 @@ const allSteps = [
         }
     },
    onInteraction: () => {
-    // This ensures audio restarts from beginning like the mouse version
-    if (this.app.audioPlayer) {
-        this.app.audioPlayer.playCurrentSentence();
-        // No need to add to speedStatesVisited here; handled in executeKeyboardShortcutAction
-    }
+    // Removed redundant playCurrentSentence call to prevent double audio reset
+    // No need to add to speedStatesVisited here; handled in executeKeyboardShortcutAction
 },
     onComplete: () => {
         // Play sentence to demonstrate the final speed
@@ -517,7 +515,7 @@ const allSteps = [
     },
     {
         id: 'typing-practice-2',
-        title: 'Typing Practice 2',
+        title: 'Typing Practice',
         description: 'Type "es ist" in lowercase in the text input area to demonstrate case sensitivity.',
         targetSelector: '#userInput',
         highlightType: 'pulse',
@@ -574,41 +572,65 @@ const allSteps = [
         }
     },
     {
-    id: 'close-button',
-    title: 'End Dictation',
-    description: 'Click the "X" button to end the dictation session and see your results.',
-    targetSelector: '#endDictationBtn',
-    highlightType: 'pulse',
-    action: 'click',
-    validation: () => {
-        // This step will be completed manually, not through validation
-        return false;
+        id: 'close-button',
+        title: 'End Dictation',
+        description: 'Click the "X" button to end the dictation session and see your results.',
+        targetSelector: '#endDictationBtn',
+        highlightType: 'pulse',
+        action: 'click',
+        validation: () => {
+            // This step will be completed manually, not through validation
+            return false;
+        },
+        onStart: () => {
+            // Set up special handling for this step
+            this.endDictationStepActive = true;
+        },
+        onComplete: () => {
+            this.endDictationStepActive = false;
+        }
     },
-    onStart: () => {
-        // Set up special handling for this step
-        this.endDictationStepActive = true;
-    },
-    onComplete: () => {
-        this.endDictationStepActive = false;
-    }
-},
     {
-    id: 'export-csv-button',
-    title: 'CSV Export Button',
-    description: 'The CSV Export button downloads your dictation results as a spreadsheet file. Try clicking it to see how it works.',
-    targetSelector: '#exportCsvBtn',
-    highlightType: 'pulse',
-    action: 'click',
-    validation: () => {
-        return this.exportCsvButtonClicked;
+        id: 'results-tooltip',
+        title: 'Results Tooltips',
+        description: 'On the results screen, click any red word or gap to see the correct answer in a tooltip.',
+        targetSelector: '.result-word-wrong, .result-word-missing, .result-gap',
+        highlightType: 'pulse',
+        action: 'click',
+        validation: () => {
+            // Validation: a tooltip is visible on a result word/gap
+            const tooltip = document.querySelector('.word-tooltip');
+            return !!tooltip && tooltip.offsetParent !== null;
+        },
+        onStart: () => {
+            // Optionally scroll to results section if needed
+            const statsSection = document.getElementById('statsSection');
+            if (statsSection) statsSection.scrollIntoView({ behavior: 'smooth' });
+        },
+        onComplete: () => {
+            // Hide tooltip after a short delay
+            setTimeout(() => {
+                document.querySelectorAll('.word-tooltip').forEach(t => t.remove());
+            }, 1000);
+        }
     },
-    onStart: () => {
-        this.exportCsvButtonClicked = false;
+    {
+        id: 'export-csv-button',
+        title: 'CSV Export Button',
+        description: 'The CSV Export button downloads your dictation results as a spreadsheet file. Try clicking it to see how it works.',
+        targetSelector: '#exportCsvBtn',
+        highlightType: 'pulse',
+        action: 'click',
+        validation: () => {
+            return this.exportCsvButtonClicked;
+        },
+        onStart: () => {
+            this.exportCsvButtonClicked = false;
+        },
+        onComplete: () => {
+            // Continue to next step
+        }
     },
-    onComplete: () => {
-        // Continue to next step
-    }
-},
 {
     id: 'restart-button',
     title: 'Restart Button',
@@ -625,7 +647,8 @@ const allSteps = [
     onComplete: () => {
         // Tutorial complete after this step
     }
-}
+    },
+    // ...existing steps...
 ];
 
         // Filter out keyboard shortcut steps on mobile
@@ -1368,6 +1391,8 @@ if (currentStep.id === 'close-button') {
      * Handle step completion
      */
     stepCompleted() {
+        if (this._stepJustCompleted) return; // Prevent double-advance
+        this._stepJustCompleted = true;
         console.log('🎯 Step completed. Current step:', this.currentStep, 'Total steps:', this.steps.length);
 
         const currentStep = this.steps[this.currentStep];
@@ -1388,6 +1413,7 @@ if (currentStep.id === 'close-button') {
         
         // Auto-advance to next step after a delay
         setTimeout(() => {
+            this._stepJustCompleted = false;
             this.nextStep();
         }, 1000);
     }
@@ -1571,10 +1597,10 @@ if (currentStep.id === 'close-button') {
             // Check for Shift+Cmd+I (or Shift+Ctrl+I on non-Mac)
             const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
             const cmdOrCtrl = isMac ? event.metaKey : event.ctrlKey;
-            
+            // Always prevent default and stop propagation for this combo
             if (event.shiftKey && cmdOrCtrl && event.key.toLowerCase() === 'i') {
-                // Prevent default behavior
                 event.preventDefault();
+                event.stopImmediatePropagation();
                 event.stopPropagation();
 
                 console.log('--- Debugging Tutorial.setupGlobalShortcut ---');
@@ -1587,23 +1613,16 @@ if (currentStep.id === 'close-button') {
                 console.log('--- End Debugging ---');
 
                 // Check if tutorial is already active via the app instance itself
-                // This is the primary fix for re-initialization
                 if (!dictationApp.tutorial || !dictationApp.tutorial.isActive) {
                     console.log('🎓 Tutorial shortcut detected (Shift+Cmd/Ctrl+I) - Starting tutorial...');
-
-                    // Create and store the tutorial instance on the dictationApp
                     dictationApp.tutorial = new Tutorial(dictationApp);
                     dictationApp.tutorial.start();
-
-                    // You might still be using window.activeTutorial elsewhere, 
-                    // so update it for consistency if needed, but dictationApp.tutorial
-                    // should be the primary source of truth.
                     window.activeTutorial = dictationApp.tutorial; 
                 } else {
                     console.log('  ⚠️ Tutorial is already active, ignoring start shortcut.');
                 }
             }
-        });
+        }, true); // Use capture phase to intercept before browser
         
         console.log('🎓 Tutorial keyboard shortcut (Shift+Cmd+I) registered globally');
     }
@@ -1648,10 +1667,17 @@ if (currentStep.id === 'close-button') {
             this.speedStatesVisited.add(this.app.audioPlayer.currentSpeed);
             // Immediately trigger validation after updating the set
             const currentStep = this.steps[this.currentStep];
-            if (currentStep && currentStep.id === 'keyboard-speed' && currentStep.validation && currentStep.validation()) {
+            if (currentStep && currentStep.id === 'keyboard-speed') {
+                // Instantly complete the step on first use of the shortcut
                 this.stepCompleted();
+                if (this.checkmarkElement) {
+                    this.checkmarkElement.classList.add('completed');
+                    this.checkmarkElement.style.visibility = 'visible';
+                }
+                if (this.tutorialContainer) {
+                    this.tutorialContainer.classList.add('step-completed');
+                }
             }
-            this.app.audioPlayer.playCurrentSentence();
         } else if (comboStr.includes('ß') || comboStr.includes('/') || comboStr.includes(',')) {
             // Hint toggle shortcut
             console.log('  💡 Executing hint toggle action');
