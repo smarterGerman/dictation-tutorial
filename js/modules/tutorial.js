@@ -361,10 +361,6 @@ const allSteps = [
     return completedCycle;
 },
         onInteraction: () => {
-            // Initialize tracking if needed
-            if (!this.speedStatesVisited) {
-                this.speedStatesVisited = new Set();
-            }
             // Track current speed and play sentence to demonstrate the speed change
             setTimeout(() => {
                 if (this.app.audioPlayer) {
@@ -410,8 +406,8 @@ const allSteps = [
     return completedCycle;
 },
     onStart: () => {
-        // Initialize speed tracking for this step
-        this.speedStatesVisited = new Set();
+        // DON'T create a new Set - keep the existing one from mouse step
+        // this.speedStatesVisited = new Set();  // REMOVE THIS LINE
         this.validatingKeyboardStep = false; // Ensure flag is reset
 
         // Track the starting speed
@@ -1211,6 +1207,15 @@ if (currentStep.id === 'close-button') {
             // Execute the actual keyboard shortcut action first
             this.executeKeyboardShortcutAction(currentStep.keyCombo);
             
+            // Call onInteraction if it exists (just like mouse clicks do)
+            console.log('🎯 Checking for onInteraction:', !!currentStep.onInteraction);
+
+            if (currentStep.onInteraction) {
+                console.log('🎯 Calling onInteraction now!');
+
+                currentStep.onInteraction();
+            }
+
             // Then validate after a delay
             setTimeout(() => {
                 if (currentStep.validation) {
@@ -1622,27 +1627,8 @@ if (currentStep.id === 'close-button') {
     
     // Toggle the speed
     this.app.audioPlayer.toggleSpeed();
-    
-    // For keyboard speed step - track exactly like mouse version
-    const currentStep = this.steps[this.currentStep];
-    if (currentStep && currentStep.id === 'keyboard-speed') {
-        // Initialize tracking if needed
-        if (!this.speedStatesVisited) {
-            this.speedStatesVisited = new Set();
-        }
-        
-        // Track the NEW speed (after toggle) - same as mouse version
-        setTimeout(() => {
-            if (this.app.audioPlayer) {
-                this.speedStatesVisited.add(this.app.audioPlayer.currentSpeed);
-                console.log('  📊 Speed tracked:', this.app.audioPlayer.currentSpeed);
-                console.log('  📈 All visited speeds:', Array.from(this.speedStatesVisited));
-                
-                // Play the current sentence to demonstrate the speed change
-                this.app.audioPlayer.playCurrentSentence();
-            }
-        }, 50);
-    }
+    this.app.audioPlayer.playCurrentSentence();
+
 } else if (comboStr.includes('ß') || comboStr.includes('/') || comboStr.includes(',')) {
     // Hint toggle shortcut
     console.log('  💡 Executing hint toggle action');
