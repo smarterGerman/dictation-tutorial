@@ -1123,3 +1123,33 @@ body {
     box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
     transform: none;
 }
+/* Remove tutorial white space for iframe usage */
+.tutorial-overlay {
+    padding: 4px !important;
+}
+
+.tutorial-container {
+    margin: 0 !important;
+    max-height: calc(100vh - 8px) !important;
+    border-radius: 8px !important;
+}
+
+.tutorial-content {
+    padding: 12px !important;
+}
+
+.tutorial-header {
+    padding: 12px 16px !important;
+}
+
+/* For very tight spacing in iframes */
+@media screen {
+    body {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+    
+    .container {
+        padding: 0 !important;
+    }
+}
