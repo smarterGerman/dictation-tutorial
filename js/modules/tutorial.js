@@ -143,12 +143,9 @@ const allSteps = [
             const userInput = document.getElementById('userInput');
             if (userInput) {
                 userInput.blur();
-                userInput.value = ''; // Clear any existing content
+                userInput.value = '';
             }
-            // Ensure audio is paused so user can practice playing with keyboard shortcut
-            if (this.app.audioPlayer && this.app.audioPlayer.isPlaying) {
-                this.app.audioPlayer.pause();
-            }
+            // DO NOT pause audio here; let it play to the end for this tutorial step
         }
     },
     {
@@ -507,27 +504,33 @@ const allSteps = [
             // Store the starting hint display state
             const hintDisplay = document.getElementById('hintDisplay');
             this.keyboardHintStepStartState = hintDisplay && hintDisplay.style.display !== 'none';
-            
             // Ensure text input is NOT focused during keyboard shortcuts
             const userInput = document.getElementById('userInput');
             if (userInput) {
                 userInput.blur();
-                userInput.value = ''; // Clear any existing content
+                userInput.value = '';
+                // Remove highlight if present (should not be here)
+                userInput.classList.remove('tutorial-highlight-glow');
             }
         },
         onComplete: () => {
-    // Add a delay so users can notice the hint toggle, then manually hide it
-    return new Promise(resolve => {
-        setTimeout(() => {
-            // Manually hide the hint to override the auto-hide timer
-            const hintDisplay = document.getElementById('hintDisplay');
-            if (hintDisplay && hintDisplay.style.display !== 'none') {
-                hintDisplay.style.display = 'none';
+            // Remove glowing highlight from input box after this step
+            const userInput = document.getElementById('userInput');
+            if (userInput) {
+                userInput.classList.remove('tutorial-highlight-glow');
             }
-            resolve();
-        }, 800);
-    });
-}
+            // Add a delay so users can notice the hint toggle, then manually hide it
+            return new Promise(resolve => {
+                setTimeout(() => {
+                    // Manually hide the hint to override the auto-hide timer
+                    const hintDisplay = document.getElementById('hintDisplay');
+                    if (hintDisplay && hintDisplay.style.display !== 'none') {
+                        hintDisplay.style.display = 'none';
+                    }
+                    resolve();
+                }, 800);
+            });
+        },
     },
     {
         id: 'typing-practice-2',
@@ -543,10 +546,18 @@ const allSteps = [
             return value.includes('es ist');
         },
         onStart: () => {
-            // Focus the text input when this step starts
+            // Focus and highlight the text input when this step starts
             const userInput = document.getElementById('userInput');
             if (userInput) {
                 userInput.focus();
+                userInput.classList.add('tutorial-highlight-glow');
+            }
+        },
+        onComplete: () => {
+            // Remove highlight after this step
+            const userInput = document.getElementById('userInput');
+            if (userInput) {
+                userInput.classList.remove('tutorial-highlight-glow');
             }
         }
         // Note: No onComplete callback - we want to keep the text visible for the Aa demo

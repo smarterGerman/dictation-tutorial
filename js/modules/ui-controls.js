@@ -169,10 +169,11 @@ export class UIControls {
             return;
         }
         
+        // For live feedback, always force case-insensitive alignment for stable word positions
         const comparison = TextComparison.compareTexts(
-            this.referenceText, 
-            userText, 
-            { ignoreCase: this.ignoreCaseActive }
+            this.referenceText,
+            userText,
+            { ignoreCase: this.ignoreCaseActive, forceCaseInsensitiveAlignment: true }
         );
         
         // Build word-to-punctuation mapping from original text

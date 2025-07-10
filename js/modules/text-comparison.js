@@ -9,69 +9,87 @@ export class TextComparison {
      * Compare user input with reference text
      */
     static compareTexts(reference, userText, options = {}) {
-        const { ignoreCase = true } = options;
-        
+        // Optionally force case-insensitive alignment (for live feedback only)
+        const { ignoreCase = true, forceCaseInsensitiveAlignment = false } = options;
         // Convert German characters in user text
         const convertedUserText = GermanChars.convert(userText);
-        
         const ignorePunctuation = true;
-        
-        let refNormalized = reference;
-        let userNormalized = convertedUserText;
-        
-        if (ignorePunctuation) {
-            // Remove ALL punctuation marks including quotation marks
-            refNormalized = refNormalized.replace(/[.,!?;:""''()„""''‚'«»\u0022\u0027\u2018\u2019\u201A\u201B\u201C\u201D\u201E\u201F\u2039\u203A\u00AB\u00BB\u275B\u275C\u275D\u275E\u300C\u300D\u300E\u300F]/g, '');
-            userNormalized = userNormalized.replace(/[.,!?;:""''()„""''‚'«»\u0022\u0027\u2018\u2019\u201A\u201B\u201C\u201D\u201E\u201F\u2039\u203A\u00AB\u00BB\u275B\u275C\u275D\u275E\u300C\u300D\u300E\u300F]/g, '');
+
+        // For alignment, use case-insensitive only if forced (for live feedback), otherwise use ignoreCase
+        let refNormAlign = reference.replace(/[.,!?;:\""''()„""''‚'«»\u0022\u0027\u2018\u2019\u201A\u201B\u201C\u201D\u201E\u201F\u2039\u203A\u00AB\u00BB\u275B\u275C\u275D\u275E\u300C\u300D\u300E\u300F]/g, '');
+        let userNormAlign = convertedUserText.replace(/[.,!?;:\""''()„""''‚'«»\u0022\u0027\u2018\u2019\u201A\u201B\u201C\u201D\u201E\u201F\u2039\u203A\u00AB\u00BB\u275B\u275C\u275D\u275E\u300C\u300D\u300E\u300F]/g, '');
+        if (forceCaseInsensitiveAlignment || ignoreCase) {
+            refNormAlign = refNormAlign.toLowerCase();
+            userNormAlign = userNormAlign.toLowerCase();
         }
-        
-        if (ignoreCase) {
-            refNormalized = refNormalized.toLowerCase();
-            userNormalized = userNormalized.toLowerCase();
-        }
-        
-        userNormalized = userNormalized.replace(/\s+/g, ' ').trim();
-        
-        const refWords = refNormalized.split(/\s+/).filter(w => w.length > 0);
-        const userWords = userNormalized.split(/\s+/).filter(w => w.length > 0);
-        
-        const alignment = this.alignSequencesWithGaps(refWords, userWords);
-        
+        refNormAlign = refNormAlign.replace(/\s+/g, ' ').trim();
+        userNormAlign = userNormAlign.replace(/\s+/g, ' ').trim();
+        const refWordsAlign = refNormAlign.split(/\s+/).filter(w => w.length > 0);
+        const userWordsAlign = userNormAlign.split(/\s+/).filter(w => w.length > 0);
+
+        // For display, use original case and compare char-by-char for capitalization errors
+        let refDisplay = reference.replace(/[.,!?;:\""''()„""''‚'«»\u0022\u0027\u2018\u2019\u201A\u201B\u201C\u201D\u201E\u201F\u2039\u203A\u00AB\u00BB\u275B\u275C\u275D\u275E\u300C\u300D\u300E\u300F]/g, '').replace(/\s+/g, ' ').trim();
+        let userDisplay = convertedUserText.replace(/[.,!?;:\""''()„""''‚'«»\u0022\u0027\u2018\u2019\u201A\u201B\u201C\u201D\u201E\u201F\u2039\u203A\u00AB\u00BB\u275B\u275C\u275D\u275E\u300C\u300D\u300E\u300F]/g, '').replace(/\s+/g, ' ').trim();
+        const refWordsDisplay = refDisplay.split(/\s+/).filter(w => w.length > 0);
+        const userWordsDisplay = userDisplay.split(/\s+/).filter(w => w.length > 0);
+
+        // Align using case-insensitive, punctuation-stripped words
+        const alignment = this.alignSequencesWithGaps(refWordsAlign, userWordsAlign);
+
+        // Now, for each alignment item, use the display words (with/without case) for output
         const result = [];
         let correct = 0;
         let wrongPosition = 0;
         let wrong = 0;
         let extra = 0;
         let missing = 0;
-        
         for (let i = 0; i < alignment.length; i++) {
             const item = alignment[i];
-            
             if (i > 0) {
                 result.push({ char: ' ', status: 'word-boundary' });
             }
-            
             if (item.type === 'match') {
-                for (let char of item.userWord) {
-                    result.push({ char, status: 'correct' });
-                    correct++;
+                // Use display words for output
+                const userWord = userWordsDisplay[item.userWord ? userWordsAlign.indexOf(item.userWord) : -1] || item.userWord;
+                const refWord = refWordsDisplay[item.refWord ? refWordsAlign.indexOf(item.refWord) : -1] || item.refWord;
+                for (let c = 0; c < userWord.length; c++) {
+                    if (ignoreCase) {
+                        // Case-insensitive: only mark as correct if chars match ignoring case
+                        if (userWord[c].toLowerCase() === refWord[c]?.toLowerCase()) {
+                            result.push({ char: userWord[c], status: 'correct' });
+                            correct++;
+                        } else {
+                            result.push({ char: userWord[c], status: 'wrong' });
+                            wrong++;
+                        }
+                    } else {
+                        // Case-sensitive: mark as wrong if case differs
+                        if (userWord[c] === refWord[c]) {
+                            result.push({ char: userWord[c], status: 'correct' });
+                            correct++;
+                        } else if (userWord[c]?.toLowerCase() === refWord[c]?.toLowerCase()) {
+                            result.push({ char: userWord[c], status: 'wrong-capitalization' });
+                            wrong++;
+                        } else {
+                            result.push({ char: userWord[c], status: 'wrong' });
+                            wrong++;
+                        }
+                    }
                 }
             } else if (item.type === 'substitute') {
-                const ref = item.refWord;
-                const user = item.userWord;
-
+                // Use display words for output
+                const refIdx = refWordsAlign.indexOf(item.refWord);
+                const userIdx = userWordsAlign.indexOf(item.userWord);
+                const ref = refWordsDisplay[refIdx] || item.refWord;
+                const user = userWordsDisplay[userIdx] || item.userWord;
                 let missingPrefix = 0;
                 let missingSuffix = 0;
-
-                // Check for missing prefix (ref ends with user input)
                 for (let idx = 1; idx <= ref.length; idx++) {
                     if (ref.slice(-idx) === user) {
                         missingPrefix = ref.length - idx;
                         break;
                     }
                 }
-                
-                // Check for missing suffix (ref starts with user input)
                 if (missingPrefix === 0) {
                     for (let idx = 1; idx <= ref.length; idx++) {
                         if (ref.slice(0, idx) === user) {
@@ -80,8 +98,6 @@ export class TextComparison {
                         }
                     }
                 }
-
-                // Add missing prefix
                 if (missingPrefix > 0) {
                     for (let k = 0; k < missingPrefix; k++) {
                         if (k > 0) result.push({ char: ' ', status: 'char-space' });
@@ -89,14 +105,28 @@ export class TextComparison {
                         missing++;
                     }
                 }
-
-                // Add user characters
                 for (let c = 0; c < user.length; c++) {
-                    result.push({ char: user[c], status: 'wrong' });
-                    wrong++;
+                    if (ignoreCase) {
+                        if (user[c].toLowerCase() === ref[c]?.toLowerCase()) {
+                            result.push({ char: user[c], status: 'wrong' });
+                            wrong++;
+                        } else {
+                            result.push({ char: user[c], status: 'wrong' });
+                            wrong++;
+                        }
+                    } else {
+                        if (user[c] === ref[c]) {
+                            result.push({ char: user[c], status: 'wrong' });
+                            wrong++;
+                        } else if (user[c]?.toLowerCase() === ref[c]?.toLowerCase()) {
+                            result.push({ char: user[c], status: 'wrong-capitalization' });
+                            wrong++;
+                        } else {
+                            result.push({ char: user[c], status: 'wrong' });
+                            wrong++;
+                        }
+                    }
                 }
-
-                // Add missing suffix
                 if (missingSuffix > 0) {
                     for (let k = 0; k < missingSuffix; k++) {
                         result.push({ char: ' ', status: 'char-space' });
@@ -105,13 +135,15 @@ export class TextComparison {
                     }
                 }
             } else if (item.type === 'insert') {
-                for (let char of item.userWord) {
+                const userIdx = userWordsAlign.indexOf(item.userWord);
+                const user = userWordsDisplay[userIdx] || item.userWord;
+                for (let char of user) {
                     result.push({ char, status: 'extra' });
                     extra++;
                 }
             } else if (item.type === 'delete') {
-                const wordLength = item.refWord.length;
-                
+                const refIdx = refWordsAlign.indexOf(item.refWord);
+                const wordLength = (refWordsDisplay[refIdx] || item.refWord).length;
                 for (let k = 0; k < wordLength; k++) {
                     if (k > 0) {
                         result.push({ char: ' ', status: 'char-space' });
@@ -121,7 +153,6 @@ export class TextComparison {
                 }
             }
         }
-        
         return {
             chars: result,
             stats: { correct, wrongPosition, wrong, extra, missing }

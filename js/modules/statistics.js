@@ -64,7 +64,8 @@ recordSentenceResult(sentenceIndex, reference, userInput, options = {}) {
     }
     
     // Calculate comparison and word stats WITH the provided options (including ignoreCase)
-    const comparison = TextComparison.compareTexts(reference, userInput, options);
+    // For results, do NOT force case-insensitive alignment; use the user's ignoreCase setting
+    const comparison = TextComparison.compareTexts(reference, userInput, { ...options, forceCaseInsensitiveAlignment: false });
     const wordStats = TextComparison.calculateWordStats(reference, userInput, options);
     
     const result = {
