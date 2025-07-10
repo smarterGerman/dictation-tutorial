@@ -422,7 +422,7 @@ const allSteps = [
     // This ensures audio restarts from beginning like the mouse version
     if (this.app.audioPlayer) {
         this.app.audioPlayer.playCurrentSentence();
-        this.speedStatesVisited.add(this.app.audioPlayer.currentSpeed);
+        // No need to add to speedStatesVisited here; handled in executeKeyboardShortcutAction
     }
 },
     onComplete: () => {
@@ -1637,15 +1637,21 @@ if (currentStep.id === 'close-button') {
             // Play current sentence shortcut
             console.log('  🔄 Executing play current sentence action');
             this.app.audioPlayer.playCurrentSentence();
-       } else if (comboStr.includes('arrowdown')) {
+        } else if (comboStr.includes('arrowdown')) {
             // Speed toggle shortcut
             console.log('  ⚡ Executing speed toggle action');
             // Toggle the speed
             this.app.audioPlayer.toggleSpeed();
+            setTimeout(() => {
+                if (!this.speedStatesVisited) this.speedStatesVisited = new Set();
+                this.speedStatesVisited.add(this.app.audioPlayer.currentSpeed);
+                // Immediately trigger validation after updating the set
+                const currentStep = this.steps[this.currentStep];
+                if (currentStep && currentStep.validation && currentStep.validation()) {
+                    this.stepCompleted();
+                }
+            }, 0);
             this.app.audioPlayer.playCurrentSentence();
-            // --- FIX: Always update speedStatesVisited after toggling speed ---
-            if (!this.speedStatesVisited) this.speedStatesVisited = new Set();
-            this.speedStatesVisited.add(this.app.audioPlayer.currentSpeed);
         } else if (comboStr.includes('ß') || comboStr.includes('/') || comboStr.includes(',')) {
             // Hint toggle shortcut
             console.log('  💡 Executing hint toggle action');
