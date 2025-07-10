@@ -19,8 +19,8 @@ export class Tutorial {
         // Interaction tracking
         this.speedStatesVisited = new Set();
 
-        // Detect if on mobile (simple check)
-        this.isMobile = window.innerWidth <= 768 || /Mobi|Android/i.test(navigator.userAgent);
+        // Detect if on mobile (improved: only true for real mobile devices, not small iframes)
+        this.isMobile = /Mobi|Android|iPhone|iPad|iPod|Mobile|Touch/.test(navigator.userAgent);
 
         // Tutorial steps configuration
        // In js/modules/tutorial.js, find the allSteps array and replace it with this reordered version:
