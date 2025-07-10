@@ -763,11 +763,7 @@ body {
     height: 100vh;
     background: none;
     z-index: 20000;
-    display: flex;
-    align-items: flex-end;
-    justify-content: flex-end;
     pointer-events: none;
-    padding: 0;
     animation: tutorialFadeIn 0.3s ease-out;
 }
 
@@ -786,8 +782,10 @@ body {
     min-height: 200px;
     max-height: 70vh;
     overflow: hidden;
-    position: relative;
-    margin: 0 40px 40px 0;
+    position: fixed;
+    bottom: 40px;
+    right: 40px;
+    margin: 0;
     transform-origin: bottom right;
     transition: height 0.2s ease-out;
     animation: tutorialSlideIn 0.4s ease-out;
