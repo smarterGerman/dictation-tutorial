@@ -28,8 +28,7 @@ body {
     margin: 0 auto;
     background: transparent;
     overflow: hidden;
-    display: flex;
-    flex-direction: column;
+    display: block;
 }
 
 .content { 
@@ -790,8 +789,7 @@ body {
     transition: height 0.2s ease-out;
     animation: tutorialSlideIn 0.4s ease-out;
     pointer-events: all;
-    display: flex;
-    flex-direction: column;
+    display: block;
 }
 @keyframes tutorialSlideIn {
     from { 
@@ -866,7 +864,7 @@ body {
 
 /* Tutorial Content */
 .tutorial-content {
-    padding: 10px 16px 8px 16px;
+    padding: 8px 12px 4px 12px;
 }
 
 .step-title {
@@ -885,8 +883,13 @@ body {
 /* Tutorial Actions */
 .tutorial-actions {
     display: flex;
-    gap: 12px;
+    gap: 8px;
     justify-content: flex-end;
+    align-items: center;
+    margin: 4px 0 0 0;
+    padding: 0;
+    flex: none;
+    width: 100%;
 }
 
 .tutorial-btn {
