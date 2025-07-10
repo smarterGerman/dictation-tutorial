@@ -337,8 +337,8 @@ export class DictationApp {
             );
         }
 
-        // If there is no user data at all, inject dummy data for tutorial results screen
-        if (sessionResults.length === 0 && window.activeTutorial) {
+        // Only inject dummy data for tutorial if there are no results AND the user has not entered any text
+        if (sessionResults.length === 0 && window.activeTutorial && userInput.trim() === '') {
             // Use a known reference from the lesson if available, else fallback
             let referenceText = 'es ist ein Test';
             let dummyInput = 'es ist ';

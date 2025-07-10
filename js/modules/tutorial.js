@@ -75,10 +75,7 @@ const allSteps = [
             if (userInput) {
                 userInput.blur();
             }
-            // Ensure audio is paused first so user can practice continuing with keyboard shortcut
-            if (this.app.audioPlayer && this.app.audioPlayer.isPlaying) {
-                this.app.audioPlayer.pause();
-            }
+            // DO NOT pause audio here; let it play to the end for this tutorial step
         }
     },
     {
@@ -94,9 +91,28 @@ const allSteps = [
         },
         onStart: () => {
             this.doubleClickTracker = { clicks: 0, lastClickTime: 0 };
-            // Ensure audio is paused so user can practice double-clicking to repeat
-            if (this.app.audioPlayer && this.app.audioPlayer.isPlaying) {
-                this.app.audioPlayer.pause();
+            // DO NOT pause audio here; let it play to the end for this tutorial step
+            // Patch: Ensure double-click always plays the full current sentence from the start
+            const playBtn = document.getElementById('playBtn');
+            if (playBtn) {
+                if (!this._doubleClickHandler) {
+                    this._doubleClickHandler = (e) => {
+                        if (e.detail === 2) {
+                            if (this.app.audioPlayer) {
+                                this.app.audioPlayer.playCurrentSentence();
+                            }
+                        }
+                    };
+                    playBtn.addEventListener('click', this._doubleClickHandler);
+                }
+            }
+        },
+        onComplete: () => {
+            // Remove double-click handler after this step
+            const playBtn = document.getElementById('playBtn');
+            if (playBtn && this._doubleClickHandler) {
+                playBtn.removeEventListener('click', this._doubleClickHandler);
+                this._doubleClickHandler = null;
             }
         }
     },
@@ -606,12 +622,28 @@ const allSteps = [
             // Optionally scroll to results section if needed
             const statsSection = document.getElementById('statsSection');
             if (statsSection) statsSection.scrollIntoView({ behavior: 'smooth' });
+            // Add click listener for result words/gaps to complete the step
+            this._resultsTooltipClickHandler = (e) => {
+                if (
+                    e.target.classList.contains('result-word-wrong') ||
+                    e.target.classList.contains('result-word-missing') ||
+                    e.target.classList.contains('result-gap')
+                ) {
+                    this.stepCompleted();
+                }
+            };
+            document.addEventListener('click', this._resultsTooltipClickHandler, true);
         },
         onComplete: () => {
             // Hide tooltip after a short delay
             setTimeout(() => {
                 document.querySelectorAll('.word-tooltip').forEach(t => t.remove());
             }, 1000);
+            // Remove click listener
+            if (this._resultsTooltipClickHandler) {
+                document.removeEventListener('click', this._resultsTooltipClickHandler, true);
+                this._resultsTooltipClickHandler = null;
+            }
         }
     },
     {
@@ -802,15 +834,34 @@ const allSteps = [
         if (currentStepEl) currentStepEl.textContent = this.currentStep + 1;
         if (titleEl) titleEl.textContent = step.title;
         if (descriptionEl) descriptionEl.textContent = step.description;
-        
+
         // Update button states
-        if (prevBtn) prevBtn.disabled = this.currentStep === 0;
-        if (nextBtn) {
-            // Hide the Next button only on the 'End Dictation' step (slide 17, id: 'close-button')
-            const isEndDictationStep = step.id === 'close-button';
-            nextBtn.style.display = isEndDictationStep ? 'none' : '';
-            nextBtn.disabled = false;
-            nextBtn.textContent = this.currentStep === this.steps.length - 1 ? 'Finish' : 'Next';
+        const isLastStep = this.currentStep === this.steps.length - 1 || step.id === 'restart-button';
+        if (isLastStep) {
+            // On last slide, replace Previous with Start Dictation
+            if (prevBtn) {
+                prevBtn.textContent = 'Start Dictation';
+                prevBtn.classList.remove('secondary');
+                prevBtn.classList.add('primary');
+                prevBtn.disabled = false;
+                prevBtn.onclick = () => this.close();
+            }
+            if (nextBtn) nextBtn.style.display = 'none';
+        } else {
+            if (prevBtn) {
+                prevBtn.textContent = 'Previous';
+                prevBtn.classList.remove('primary');
+                prevBtn.classList.add('secondary');
+                prevBtn.disabled = this.currentStep === 0;
+                prevBtn.onclick = () => this.previousStep();
+            }
+            if (nextBtn) {
+                // Hide the Next/Finish button on the 'End Dictation' step (slide 17, id: 'close-button')
+                const isEndDictationStep = step.id === 'close-button';
+                nextBtn.style.display = isEndDictationStep ? 'none' : '';
+                nextBtn.disabled = false;
+                nextBtn.textContent = this.currentStep === this.steps.length - 1 ? 'Finish' : 'Next';
+            }
         }
     }
 
@@ -1483,20 +1534,39 @@ if (currentStep.id === 'close-button') {
      */
     close() {
         if (this.preventAutoClose) {
-        console.log('Tutorial close prevented during end dictation step');
-        return;
-    }
+            console.log('Tutorial close prevented during end dictation step');
+            return;
+        }
         this.isActive = false;
         this.removeHighlight();
-        
+
+        // Reset the main app state so the tool is ready for use
+        if (this.app) {
+            if (this.app.uiControls && typeof this.app.uiControls.reset === 'function') this.app.uiControls.reset();
+            if (this.app.state && typeof this.app.state.reset === 'function') this.app.state.reset();
+            if (this.app.statistics && typeof this.app.statistics.reset === 'function') this.app.statistics.reset();
+            if (this.app.audioPlayer && typeof this.app.audioPlayer.reset === 'function') this.app.audioPlayer.reset();
+            // Remove all event listeners by re-initializing elements, then re-initialize UI controls
+            if (this.app.uiControls && typeof this.app.uiControls.initializeElements === 'function') this.app.uiControls.initializeElements();
+            if (this.app.uiControls && typeof this.app.uiControls.initialize === 'function') this.app.uiControls.initialize();
+            // Load lesson/audio and set up UI for dictation
+            if (typeof this.app.loadInitialData === 'function') {
+                this.app.loadInitialData().then(() => {
+                    if (this.app.uiControls && typeof this.app.uiControls.focusInput === 'function') this.app.uiControls.focusInput();
+                });
+            } else if (this.app.uiControls && typeof this.app.uiControls.focusInput === 'function') {
+                this.app.uiControls.focusInput();
+            }
+        }
+
         // Clear global reference
         window.activeTutorial = null;
-        
+
         if (this.overlay) {
             this.overlay.remove();
             this.overlay = null;
         }
-        
+
         this.tutorialContainer = null;
         this.checkmarkElement = null;
     }

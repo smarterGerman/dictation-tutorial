@@ -82,24 +82,45 @@ export class UIControls {
      * Setup event listeners
      */
     setupEventListeners() {
+        // Remove old event listeners by replacing elements with clones
+        const replaceWithClone = (btnName) => {
+            if (this[btnName]) {
+                const oldBtn = this[btnName];
+                const newBtn = oldBtn.cloneNode(true);
+                oldBtn.parentNode.replaceChild(newBtn, oldBtn);
+                this[btnName] = newBtn;
+            }
+        };
+        ['ignoreCaseBtn', 'focusModeBtn', 'hintBtn', 'endDictationBtn'].forEach(replaceWithClone);
+        if (this.userInput) {
+            const oldInput = this.userInput;
+            const newInput = oldInput.cloneNode(true);
+            oldInput.parentNode.replaceChild(newInput, oldInput);
+            this.userInput = newInput;
+            // Patch: re-register input with keyboard shortcuts if available
+            if (window.dictationApp && window.dictationApp.keyboard && typeof window.dictationApp.keyboard.setUserInputElement === 'function') {
+                window.dictationApp.keyboard.setUserInputElement(this.userInput);
+            }
+        }
+
         // Input field events
         if (this.userInput) {
             DOMHelpers.addEventListener(this.userInput, 'input', (e) => this.handleUserInput(e));
         }
-        
+
         // Button events
         if (this.ignoreCaseBtn) {
             DOMHelpers.addEventListener(this.ignoreCaseBtn, 'click', () => this.toggleIgnoreCase());
         }
-        
+
         if (this.focusModeBtn) {
             DOMHelpers.addEventListener(this.focusModeBtn, 'click', () => this.toggleFocusMode());
         }
-        
+
         if (this.hintBtn) {
             DOMHelpers.addEventListener(this.hintBtn, 'click', () => this.showHint());
         }
-        
+
         if (this.endDictationBtn) {
             DOMHelpers.addEventListener(this.endDictationBtn, 'click', () => {
                 if (this.onEndDictation) this.onEndDictation();
@@ -424,7 +445,21 @@ export class UIControls {
         this.hideHint();
         this.setReferenceText('');
         this.updatePlaceholder(0);
-        
+
+        // Always reset focus and case sensitivity to default
+        this.focusModeActive = false;
+        this.ignoreCaseActive = true;
+
+        // Update button UI to match state
+        if (this.focusModeBtn) {
+            DOMHelpers.toggleClass(this.focusModeBtn, 'active', false);
+            this.focusModeBtn.title = "Focus Mode OFF - Show live feedback";
+        }
+        if (this.ignoreCaseBtn) {
+            DOMHelpers.toggleClass(this.ignoreCaseBtn, 'active', false);
+            this.ignoreCaseBtn.title = "Capitalization checking OFF";
+        }
+
         if (this.liveFeedback) {
             DOMHelpers.setContent(this.liveFeedback, CONFIG.liveFeedbackDefault);
         }
