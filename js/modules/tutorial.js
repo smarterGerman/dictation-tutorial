@@ -406,10 +406,6 @@ const allSteps = [
     return completedCycle;
 },
     onStart: () => {
-        // DON'T create a new Set - keep the existing one from mouse step
-        // this.speedStatesVisited = new Set();  // REMOVE THIS LINE
-        this.validatingKeyboardStep = false; // Ensure flag is reset
-
         // Track the starting speed
         if (this.app.audioPlayer) {
             this.speedStatesVisited.add(this.app.audioPlayer.currentSpeed);
@@ -426,6 +422,7 @@ const allSteps = [
     // This ensures audio restarts from beginning like the mouse version
     if (this.app.audioPlayer) {
         this.app.audioPlayer.playCurrentSentence();
+        this.speedStatesVisited.add(this.app.audioPlayer.currentSpeed);
     }
 },
     onComplete: () => {
@@ -1573,18 +1570,32 @@ if (currentStep.id === 'close-button') {
                 // Prevent default behavior
                 event.preventDefault();
                 event.stopPropagation();
-                
-                console.log('🎓 Tutorial shortcut detected (Shift+Cmd+I) - Starting tutorial...');
-                
-                // Check if tutorial is already active
-                if (window.activeTutorial && window.activeTutorial.isActive) {
-                    console.log('  Tutorial is already active, ignoring shortcut');
-                    return;
+
+                console.log('--- Debugging Tutorial.setupGlobalShortcut ---');
+                console.log('  dictationApp.tutorial (before shortcut check):', dictationApp.tutorial);
+                if (dictationApp.tutorial) {
+                    console.log('  dictationApp.tutorial.isActive (before shortcut check):', dictationApp.tutorial.isActive);
+                } else {
+                    console.log('  dictationApp.tutorial is null or undefined.');
                 }
-                
-                // Create and start new tutorial
-                const tutorial = new Tutorial(dictationApp);
-                tutorial.start();
+                console.log('--- End Debugging ---');
+
+                // Check if tutorial is already active via the app instance itself
+                // This is the primary fix for re-initialization
+                if (!dictationApp.tutorial || !dictationApp.tutorial.isActive) {
+                    console.log('🎓 Tutorial shortcut detected (Shift+Cmd/Ctrl+I) - Starting tutorial...');
+
+                    // Create and store the tutorial instance on the dictationApp
+                    dictationApp.tutorial = new Tutorial(dictationApp);
+                    dictationApp.tutorial.start();
+
+                    // You might still be using window.activeTutorial elsewhere, 
+                    // so update it for consistency if needed, but dictationApp.tutorial
+                    // should be the primary source of truth.
+                    window.activeTutorial = dictationApp.tutorial; 
+                } else {
+                    console.log('  ⚠️ Tutorial is already active, ignoring start shortcut.');
+                }
             }
         });
         
@@ -1640,7 +1651,5 @@ if (currentStep.id === 'close-button') {
 } else {
     console.log('  ❓ Unknown keyboard shortcut action for:', comboStr);
 }
-this.validatingKeyboardStep = false;
-console.log('  🔓 Force reset validation flag to:', this.validatingKeyboardStep);
     }
 }
