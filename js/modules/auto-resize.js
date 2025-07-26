@@ -93,33 +93,39 @@ export class AutoResize {
      * Send height to parent frame
      */
     sendHeightToParent() {
-        // Clear any pending resize calls
-        if (this.resizeTimeout) {
-            clearTimeout(this.resizeTimeout);
-        }
+    // Don't resize iframe when tutorial is active - let it stay at current size
+    const tutorialOverlay = document.querySelector('.tutorial-overlay');
+    if (tutorialOverlay && window.activeTutorial && window.activeTutorial.isActive) {
+        return; // Skip resize completely during tutorial
+    }
+    
+    // Clear any pending resize calls
+    if (this.resizeTimeout) {
+        clearTimeout(this.resizeTimeout);
+    }
+    
+    // Use a small delay to ensure DOM is fully updated
+    this.resizeTimeout = setTimeout(() => {
+        const height = this.calculateHeight();
         
-        // Use a small delay to ensure DOM is fully updated
-        this.resizeTimeout = setTimeout(() => {
-            const height = this.calculateHeight();
+        // Only send if height actually changed (prevent spam)
+        if (height !== this.lastReportedHeight) {
+            this.lastReportedHeight = height;
             
-            // Only send if height actually changed (prevent spam)
-            if (height !== this.lastReportedHeight) {
-                this.lastReportedHeight = height;
-                
-                // Send message to parent frame
-                if (window.parent && window.parent !== window) {
-                    try {
-                        window.parent.postMessage({
-                            type: 'resize',
-                            height: height
-                        }, '*');
-                    } catch (error) {
-                        console.debug('Could not send height to parent:', error);
-                    }
+            // Send message to parent frame
+            if (window.parent && window.parent !== window) {
+                try {
+                    window.parent.postMessage({
+                        type: 'resize',
+                        height: height
+                    }, '*');
+                } catch (error) {
+                    console.debug('Could not send height to parent:', error);
                 }
             }
-        }, CONFIG.autoResizeDelay);
-    }
+        }
+    }, CONFIG.autoResizeDelay);
+}
     
     /**
  * Calculate current document height - with tutorial-aware logic
