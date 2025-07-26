@@ -94,7 +94,7 @@ export class AutoResize {
      */
     sendHeightToParent() {
     // Don't resize iframe when tutorial is active - let it stay at current size
-    const tutorialOverlay = document.querySelector('.tutorial-overlay');
+    const tutorialOverlay = document.querySelector('.dictation-tutorial');
     if (tutorialOverlay && window.activeTutorial && window.activeTutorial.isActive) {
         return; // Skip resize completely during tutorial
     }
@@ -132,14 +132,14 @@ export class AutoResize {
  */
 calculateHeight() {
     // Check if tutorial is active
-    const tutorialOverlay = document.getElementById('tutorialOverlay');
+    const tutorialOverlay = document.querySelector('.dictation-tutorial');
     const isActiveTutorial = tutorialOverlay && tutorialOverlay.style.display !== 'none' && 
                             window.activeTutorial && window.activeTutorial.isActive;
     
     if (isActiveTutorial) {
         // For tutorial mode: calculate based on actual visible content
         const container = document.querySelector('.container');
-        const tutorialContainer = document.querySelector('.tutorial-container');
+        const tutorialContainer = document.querySelector('.dictation-tutorial');
         
         if (container && tutorialContainer) {
             // Get the main app container height
