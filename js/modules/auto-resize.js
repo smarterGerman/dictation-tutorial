@@ -89,14 +89,12 @@ export class AutoResize {
         this.observer = mutationObserver;
     }
     
-    /**
-     * Send height to parent frame
-     */
     sendHeightToParent() {
-    // Don't resize iframe when tutorial is active - let it stay at current size
-    const tutorialOverlay = document.querySelector('.dictation-tutorial');
-    if (tutorialOverlay && window.activeTutorial && window.activeTutorial.isActive) {
-        return; // Skip resize completely during tutorial
+    // COMPLETE BLOCK: Don't resize iframe when dictation tutorial is present
+    const tutorialElement = document.querySelector('.dictation-tutorial');
+    if (tutorialElement) {
+        console.log('Tutorial detected - skipping iframe resize');
+        return; // Skip ALL resize operations during tutorial
     }
     
     // Clear any pending resize calls
