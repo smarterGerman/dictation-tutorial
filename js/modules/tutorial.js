@@ -784,35 +784,55 @@ const allSteps = [
     }
 
     /**
-     * Position the tutorial modal near the main player area
+     * Position the tutorial modal to the right of the dictation tool container
      */
     positionTutorialNearPlayer() {
-        // Try to find the main player element (player-pill or playBtn)
-        let player = document.querySelector('.player-pill');
-        if (!player) player = document.getElementById('playBtn');
-        if (!player) {
-            // Fallback: default to bottom right
+        // Find the main container element of the dictation tool
+        let container = document.querySelector('.container');
+        if (!container) {
+            // Fallback: default positioning
             this.tutorialContainer.style.position = 'fixed';
-            this.tutorialContainer.style.bottom = '40px';
-            this.tutorialContainer.style.right = '40px';
+            this.tutorialContainer.style.top = '20px';
+            this.tutorialContainer.style.right = '20px';
             this.tutorialContainer.style.left = '';
-            this.tutorialContainer.style.top = '';
+            this.tutorialContainer.style.bottom = '';
             return;
         }
-        const rect = player.getBoundingClientRect();
-        // Place the modal 24px below and aligned right with the player
-        const offset = 24;
-        const modalWidth = this.tutorialContainer.offsetWidth || 400;
-        let top = rect.bottom + offset;
-        let left = rect.right - modalWidth;
-        // Clamp left to at least 16px from the left edge
-        left = Math.max(left, 16);
-        // Clamp top to not go off the bottom of the viewport
-        const maxTop = window.innerHeight - this.tutorialContainer.offsetHeight - 16;
-        if (top > maxTop) top = maxTop;
+        
+        const containerRect = container.getBoundingClientRect();
+        const windowWidth = window.innerWidth;
+        const windowHeight = window.innerHeight;
+        
+        // Position tutorial to the right of the dictation tool with some spacing
+        const spacing = 20;
+        const tutorialWidth = 320; // Fixed width from CSS
+        
+        // Calculate position
+        let left = containerRect.right + spacing;
+        let top = containerRect.top;
+        
+        // Ensure tutorial doesn't go off-screen to the right
+        if (left + tutorialWidth > windowWidth - 20) {
+            // If not enough space on the right, position on the left
+            left = containerRect.left - tutorialWidth - spacing;
+            // If still not enough space, position inside the viewport
+            if (left < 20) {
+                left = windowWidth - tutorialWidth - 20;
+            }
+        }
+        
+        // Ensure tutorial doesn't go off-screen vertically
+        const tutorialHeight = this.tutorialContainer.offsetHeight || 400;
+        if (top + tutorialHeight > windowHeight - 20) {
+            top = windowHeight - tutorialHeight - 20;
+        }
+        if (top < 20) {
+            top = 20;
+        }
+        
         this.tutorialContainer.style.position = 'fixed';
-        this.tutorialContainer.style.top = `${top}px`;
         this.tutorialContainer.style.left = `${left}px`;
+        this.tutorialContainer.style.top = `${top}px`;
         this.tutorialContainer.style.right = '';
         this.tutorialContainer.style.bottom = '';
     }
