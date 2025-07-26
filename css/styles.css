@@ -781,7 +781,7 @@ body {
     max-width: 320px !important;
     min-width: 280px;
     height: auto;
-    max-height: 70vh;
+    max-height: none;
     overflow: auto;
     margin: 0;
     transition: height 0.2s ease-out;
