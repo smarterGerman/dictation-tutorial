@@ -803,21 +803,24 @@ const allSteps = [
         const windowWidth = window.innerWidth;
         const windowHeight = window.innerHeight;
         
-        // Position tutorial to the right of the dictation tool with some spacing
+// Position tutorial to the right of the dictation tool with some spacing
         const spacing = 20;
         const tutorialWidth = 320; // Fixed width from CSS
         
-        // Calculate position
+        // Calculate position - start from right edge of container
         let left = containerRect.right + spacing;
         let top = containerRect.top;
         
         // Ensure tutorial doesn't go off-screen to the right
         if (left + tutorialWidth > windowWidth - 20) {
-            // If not enough space on the right, position on the left
-            left = containerRect.left - tutorialWidth - spacing;
-            // If still not enough space, position inside the viewport
-            if (left < 20) {
-                left = windowWidth - tutorialWidth - 20;
+            // If not enough space on the right, position it completely outside the container area
+            // Either far left or use a different strategy
+            if (containerRect.left - tutorialWidth - spacing > 20) {
+                // Position on the left side of container if there's space
+                left = containerRect.left - tutorialWidth - spacing;
+            } else {
+                // Position at the very right edge of viewport, but ensure no overlap
+                left = Math.max(containerRect.right + 10, windowWidth - tutorialWidth - 10);
             }
         }
         
