@@ -793,15 +793,15 @@ const allSteps = [
         if (!player) {
             // Fallback: default to bottom right
             this.tutorialContainer.style.position = 'fixed';
-            this.tutorialContainer.style.bottom = '40px';
-            this.tutorialContainer.style.right = '40px';
+            this.tutorialContainer.style.bottom = '20px';
+            this.tutorialContainer.style.right = '20px';
             this.tutorialContainer.style.left = '';
             this.tutorialContainer.style.top = '';
             return;
         }
         const rect = player.getBoundingClientRect();
-        // Place the modal 24px below and aligned right with the player
-        const offset = 24;
+        // Place the modal 12px below and aligned right with the player
+        const offset = 12;
         const modalWidth = this.tutorialContainer.offsetWidth || 400;
         let top = rect.bottom + offset;
         let left = rect.right - modalWidth;
