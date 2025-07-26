@@ -777,8 +777,8 @@ body {
     background: white;
     border-radius: 12px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
-    width: 320px;
-    max-width: 320px;
+    width: 320px !important;
+    max-width: 320px !important;
     min-width: 280px;
     height: auto;
     max-height: 70vh;
