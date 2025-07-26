@@ -122,17 +122,43 @@ export class AutoResize {
     }
     
     /**
-     * Calculate current document height
-     */
-    calculateHeight() {
-        return Math.max(
-            document.body.scrollHeight,
-            document.body.offsetHeight,
-            document.documentElement.clientHeight,
-            document.documentElement.scrollHeight,
-            document.documentElement.offsetHeight
-        );
+ * Calculate current document height - with tutorial-aware logic
+ */
+calculateHeight() {
+    // Check if tutorial is active
+    const tutorialOverlay = document.getElementById('tutorialOverlay');
+    const isActiveTutorial = tutorialOverlay && tutorialOverlay.style.display !== 'none' && 
+                            window.activeTutorial && window.activeTutorial.isActive;
+    
+    if (isActiveTutorial) {
+        // For tutorial mode: calculate based on actual visible content
+        const container = document.querySelector('.container');
+        const tutorialContainer = document.querySelector('.tutorial-container');
+        
+        if (container && tutorialContainer) {
+            // Get the main app container height
+            const containerRect = container.getBoundingClientRect();
+            const tutorialRect = tutorialContainer.getBoundingClientRect();
+            
+            // Calculate needed height: container height + tutorial height + some padding
+            const neededHeight = Math.max(
+                containerRect.bottom,
+                tutorialRect.bottom
+            ) + 40; // Add some padding
+            
+            return Math.min(neededHeight, window.innerHeight * 0.9); // Max 90% of viewport
+        }
     }
+    
+    // Original calculation for non-tutorial mode
+    return Math.max(
+        document.body.scrollHeight,
+        document.body.offsetHeight,
+        document.documentElement.clientHeight,
+        document.documentElement.scrollHeight,
+        document.documentElement.offsetHeight
+    );
+}
     
     /**
      * Manually trigger height recalculation

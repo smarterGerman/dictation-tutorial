@@ -872,6 +872,12 @@ const allSteps = [
         if (step.onStart) {
             step.onStart();
         }
+        // Trigger resize after step change to adjust iframe height
+        setTimeout(() => {
+            if (this.app && this.app.autoResize) {
+                this.app.autoResize.triggerResize();
+            }
+        }, 150);
     }
 
     /**
@@ -1519,9 +1525,13 @@ if (currentStep.id === 'close-button') {
         }
         
         // Auto-advance to next step after a delay
-        setTimeout(() => {
-            this._stepJustCompleted = false;
-            this.nextStep();
+setTimeout(() => {
+    this._stepJustCompleted = false;
+    this.nextStep();
+    // Trigger resize after step completion
+    if (this.app && this.app.autoResize) {
+        this.app.autoResize.triggerResize();
+            }
         }, 1000);
     }
 
