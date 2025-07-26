@@ -1138,35 +1138,3 @@ body {
     box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
     transform: none;
 }
-/* Remove tutorial white space for compact positioning */
-.tutorial-overlay {
-    padding: 0 !important;
-    align-items: flex-start;
-    justify-content: flex-start;
-}
-
-.tutorial-container {
-    margin: 0 !important;
-    max-height: calc(100vh - 40px) !important;
-    border-radius: 12px !important;
-}
-
-.tutorial-content {
-    padding: 12px 16px 8px 16px !important;
-}
-
-.tutorial-header {
-    padding: 12px 16px !important;
-}
-
-/* Ensure compact sizing in all scenarios */
-@media screen {
-    body {
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-    
-    .container {
-        padding: 20px !important;
-    }
-}
