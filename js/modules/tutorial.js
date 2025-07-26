@@ -797,6 +797,9 @@ const allSteps = [
             this.tutorialContainer.style.right = '20px';
             this.tutorialContainer.style.left = '';
             this.tutorialContainer.style.top = '';
+            this.tutorialContainer.style.height = 'auto';
+            this.tutorialContainer.style.minHeight = 'auto';
+            this.tutorialContainer.style.maxHeight = 'fit-content';
             return;
         }
         const rect = player.getBoundingClientRect();
