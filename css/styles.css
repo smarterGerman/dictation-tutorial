@@ -781,7 +781,7 @@ body {
     max-width: 320px !important;
     min-width: 280px !important;
     height: auto !important;
-    max-height: none !important;
+    max-height: 70vh !important;
     overflow: visible !important;
     margin: 0 !important;
     padding: 0 !important;
@@ -1144,4 +1144,20 @@ body {
     background: #3b82f6 !important;
     box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
     transform: none;
+}
+
+/* Fix iframe extra whitespace - classic problem */
+iframe {
+    display: block !important;
+    vertical-align: bottom !important;
+    border: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Alternative fix for Teachable specifically */
+.lecture-content iframe,
+[class*="custom"] iframe {
+    display: block !important;
+    vertical-align: bottom !important;
 }
