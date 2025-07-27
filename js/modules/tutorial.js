@@ -1010,7 +1010,6 @@ if (nextBtn) {
         // Don't scroll during tutorial to prevent jumping
         // element.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
-}
 
     /**
      * Highlight both restart and export CSV buttons for the export options step
