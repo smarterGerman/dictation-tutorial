@@ -810,9 +810,15 @@ const allSteps = [
         const maxTop = window.innerHeight - this.tutorialContainer.offsetHeight - 16;
         if (top > maxTop) top = maxTop;
         this.tutorialContainer.style.position = 'fixed';
-        this.tutorialContainer.style.top = `${top}px`;
-        this.tutorialContainer.style.left = `${left}px`;
-        this.tutorialContainer.style.right = '';
+        // Only set position on first call, then keep it fixed
+        if (!this.tutorialContainer.dataset.positioned) {
+            this.tutorialContainer.style.top = `${top}px`;
+            this.tutorialContainer.dataset.positioned = 'true';
+        }
+// Only set position on first call, then keep it fixed
+        if (!this.tutorialContainer.dataset.positioned) {
+            this.tutorialContainer.style.left = `${left}px`;
+        }        this.tutorialContainer.style.right = '';
         this.tutorialContainer.style.bottom = '';
     }
 
