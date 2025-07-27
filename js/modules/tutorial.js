@@ -9,6 +9,7 @@ export class Tutorial {
         this.app = dictationApp;
         this.currentStep = 0;
         this.isActive = false;
+        this.isCompleted = false; // Add completion state flag
         this.overlay = null;
         this.tutorialContainer = null;
         this.checkmarkElement = null;
@@ -714,6 +715,7 @@ const allSteps = [
         if (this.isActive) return;
         
         this.isActive = true;
+        this.isCompleted = false; // Reset completion state
         this.currentStep = 0;
         
         // Set global reference for other modules
@@ -885,45 +887,39 @@ const allSteps = [
      * Update tutorial UI with current step info
      */
     updateTutorialUI(step) {
-        const currentStepEl = document.querySelector('.current-step');
-        const titleEl = document.querySelector('.step-title');
-        const descriptionEl = document.querySelector('.step-description');
-        const prevBtn = document.getElementById('tutorialPrev');
-        const nextBtn = document.getElementById('tutorialNext');
-        
-        if (currentStepEl) currentStepEl.textContent = this.currentStep + 1;
-        if (titleEl) titleEl.textContent = step.title;
-        if (descriptionEl) descriptionEl.textContent = step.description;
-
-        // Update button states
-        const isLastStep = this.currentStep === this.steps.length - 1 || step.id === 'restart-button';
-        if (isLastStep) {
-            // On last slide, replace Previous with Start Dictation
-            if (prevBtn) {
-                prevBtn.textContent = 'Start Dictation';
-                prevBtn.classList.remove('secondary');
-                prevBtn.classList.add('primary');
-                prevBtn.disabled = false;
-                prevBtn.onclick = () => this.close();
-            }
-            if (nextBtn) nextBtn.style.display = 'none';
-        } else {
-            if (prevBtn) {
-                prevBtn.textContent = 'Previous';
-                prevBtn.classList.remove('primary');
-                prevBtn.classList.add('secondary');
-                prevBtn.disabled = this.currentStep === 0;
-                prevBtn.onclick = () => this.previousStep();
-            }
-            if (nextBtn) {
-                // Hide the Next/Finish button on the 'End Dictation' step (slide 17, id: 'close-button')
-                const isEndDictationStep = step.id === 'close-button';
-                nextBtn.style.display = isEndDictationStep ? 'none' : '';
-                nextBtn.disabled = false;
-                nextBtn.textContent = this.currentStep === this.steps.length - 1 ? 'Finish' : 'Next';
-            }
-        }
+    // Don't update UI if tutorial is completed
+    if (this.isCompleted) {
+        return;
     }
+    
+    const currentStepEl = document.querySelector('.current-step');
+    const titleEl = document.querySelector('.step-title');
+    const descriptionEl = document.querySelector('.step-description');
+    const prevBtn = document.getElementById('tutorialPrev');
+    const nextBtn = document.getElementById('tutorialNext');
+    
+    if (currentStepEl) currentStepEl.textContent = this.currentStep + 1;
+    if (titleEl) titleEl.textContent = step.title;
+    if (descriptionEl) descriptionEl.textContent = step.description;
+
+    // Regular button setup for ALL steps (including the last one)
+    if (prevBtn) {
+        prevBtn.textContent = 'Previous';
+        prevBtn.classList.remove('primary');
+        prevBtn.classList.add('secondary');
+        prevBtn.disabled = this.currentStep === 0;
+        prevBtn.onclick = () => this.previousStep();
+    }
+    
+    if (nextBtn) {
+        // Hide the Next/Finish button on the 'End Dictation' step (slide 17, id: 'close-button')
+        const isEndDictationStep = step.id === 'close-button';
+        nextBtn.style.display = isEndDictationStep ? 'none' : '';
+        nextBtn.disabled = false;
+        nextBtn.textContent = this.currentStep === this.steps.length - 1 ? 'Finish' : 'Next';
+        nextBtn.onclick = () => this.nextStep();
+    }
+}
 
     /**
      * Add highlight to target element
@@ -1569,36 +1565,49 @@ setTimeout(() => {
      * Complete tutorial
      */
     completeTutorial() {
-        // Show completion message
-        const titleEl = document.querySelector('.step-title');
-        const descriptionEl = document.querySelector('.step-description');
-        const nextBtn = document.getElementById('tutorialNext');
-        const skipBtn = document.getElementById('tutorialSkip');
-        const currentStepEl = document.querySelector('.current-step');
-        
-        if (titleEl) titleEl.textContent = 'Tutorial Complete!';
-        if (descriptionEl) descriptionEl.textContent = 'You have learned all the essential features. You can now use the dictation tool effectively!';
-        if (nextBtn) {
-            nextBtn.textContent = 'Start Using the Tool';
-            nextBtn.onclick = () => this.close();
-        }
-        
-        // Hide the "Skip Tutorial" button on the completion screen
-        if (skipBtn) {
-            skipBtn.style.display = 'none';
-        }
-        
-        // Update step counter to show final step
-        if (currentStepEl) currentStepEl.textContent = this.steps.length + 1;
-        
-        // Update progress bar to 100%
-        const progressFill = document.querySelector('.progress-fill');
-        if (progressFill) {
-            progressFill.style.width = '100%';
-        }
-        
-        this.removeHighlight();
+    this.isCompleted = true; // Set completion state flag
+    
+    // Show completion message
+    const titleEl = document.querySelector('.step-title');
+    const descriptionEl = document.querySelector('.step-description');
+    const nextBtn = document.getElementById('tutorialNext');
+    const prevBtn = document.getElementById('tutorialPrev');
+    const skipBtn = document.getElementById('tutorialSkip');
+    const currentStepEl = document.querySelector('.current-step');
+    
+    if (titleEl) titleEl.textContent = 'Tutorial Complete!';
+    if (descriptionEl) descriptionEl.textContent = 'You have learned all the essential features. You can now use the dictation tool effectively!';
+    
+    // Set up the completion screen buttons (slide 21)
+    if (prevBtn) {
+        // Previous button becomes "Start Using the Tool" on completion screen
+        prevBtn.textContent = 'Start Using the Tool';
+        prevBtn.classList.remove('secondary');
+        prevBtn.classList.add('primary');
+        prevBtn.disabled = false;
+        prevBtn.onclick = () => this.close();
     }
+    
+    if (nextBtn) {
+        nextBtn.style.display = 'none'; // Hide next button on completion screen
+    }
+    
+    // Hide the "Skip Tutorial" button on the completion screen
+    if (skipBtn) {
+        skipBtn.style.display = 'none';
+    }
+    
+    // Update step counter to show final step
+    if (currentStepEl) currentStepEl.textContent = this.steps.length + 1;
+    
+    // Update progress bar to 100%
+    const progressFill = document.querySelector('.progress-fill');
+    if (progressFill) {
+        progressFill.style.width = '100%';
+    }
+    
+    this.removeHighlight();
+}
 
     /**
      * Close tutorial
