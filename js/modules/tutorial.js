@@ -1527,7 +1527,14 @@ if (currentStep.id === 'close-button') {
         // Auto-advance to next step after a delay
 setTimeout(() => {
     this._stepJustCompleted = false;
-    this.nextStep();
+    
+    // CHECK IF THIS IS THE LAST STEP (restart-button step)
+    if (currentStep.id === 'restart-button' || this.currentStep === this.steps.length - 1) {
+        this.completeTutorial(); // Go to completion screen instead of nextStep
+    } else {
+        this.nextStep();
+    }
+    
     // Trigger resize after step completion
     if (this.app && this.app.autoResize) {
         this.app.autoResize.triggerResize();
@@ -1613,13 +1620,11 @@ setTimeout(() => {
             if (this.app.uiControls && typeof this.app.uiControls.initializeElements === 'function') this.app.uiControls.initializeElements();
             if (this.app.uiControls && typeof this.app.uiControls.initialize === 'function') this.app.uiControls.initialize();
             // Load lesson/audio and set up UI for dictation
-            if (typeof this.app.loadInitialData === 'function') {
-                this.app.loadInitialData().then(() => {
-                    if (this.app.uiControls && typeof this.app.uiControls.focusInput === 'function') this.app.uiControls.focusInput();
-                });
-            } else if (this.app.uiControls && typeof this.app.uiControls.focusInput === 'function') {
-                this.app.uiControls.focusInput();
-            }
+    if (typeof this.app.loadInitialData === 'function') {
+            this.app.loadInitialData().then(() => {
+                // Don't auto-focus after tutorial completion
+            });
+        }
         }
 
         // Clear global reference
