@@ -396,6 +396,8 @@ body {
     flex-direction:column; 
     gap:20px; 
     padding: 0 8px; /* Add a little horizontal padding to prevent edge collision */
+    align-items: center;
+
 }
 
 .input-field {
