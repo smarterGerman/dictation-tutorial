@@ -945,7 +945,7 @@ if (nextBtn) {
             nextBtn.textContent = this.currentStep === this.steps.length - 1 ? 'Finish' : 'Next';
             nextBtn.onclick = () => this.nextStep();
         }
-
+    }
     /**
      * Add highlight to target element
      */
