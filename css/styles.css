@@ -785,6 +785,7 @@ body {
     overflow: visible !important;
     margin: 0 !important;
     padding: 0 !important;
+    margin-bottom: 0 !important;
     transition: height 0.2s ease-out !important;
     animation: tutorialSlideIn 0.4s ease-out !important;
     pointer-events: all !important;
