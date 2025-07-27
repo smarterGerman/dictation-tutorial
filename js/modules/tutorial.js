@@ -773,8 +773,8 @@ const allSteps = [
         
         // Position the tutorial modal near the main player
         this.positionTutorialNearPlayer();
-        // window.addEventListener('resize', () => this.positionTutorialNearPlayer());
-        // window.addEventListener('scroll', () => this.positionTutorialNearPlayer(), true);
+        window.addEventListener('resize', () => this.positionTutorialNearPlayer());
+        window.addEventListener('scroll', () => this.positionTutorialNearPlayer(), true);
 
         // Setup event listeners
         this.setupTutorialEventListeners();
@@ -783,17 +783,37 @@ const allSteps = [
         this.checkmarkElement = document.getElementById('tutorialCheckmark');
     }
 
-    /**
-     * Position the tutorial modal near the main player area
-     */
-    positionTutorialNearPlayer() {
-        // Always use fixed bottom-right position to prevent jumping
+    // Try to find the main player element (player-pill or playBtn)
+        let player = document.querySelector('.player-pill');
+        if (!player) player = document.getElementById('playBtn');
+        if (!player) {
+            // Fallback: default to bottom right
+            this.tutorialContainer.style.position = 'fixed';
+            this.tutorialContainer.style.bottom = '20px';
+            this.tutorialContainer.style.right = '20px';
+            this.tutorialContainer.style.left = '';
+            this.tutorialContainer.style.top = '';
+            this.tutorialContainer.style.height = 'auto';
+            this.tutorialContainer.style.minHeight = 'auto';
+            this.tutorialContainer.style.maxHeight = 'fit-content';
+            return;
+        }
+        const rect = player.getBoundingClientRect();
+        // Place the modal 40px below and aligned right with the player
+        const offset = 40;
+        const modalWidth = this.tutorialContainer.offsetWidth || 400;
+        let top = rect.bottom + offset;
+        let left = rect.right - modalWidth + 50; // Move more to the right
+        // Clamp left to at least 16px from the left edge
+        left = Math.max(left, 16);
+        // Clamp top to not go off the bottom of the viewport
+        const maxTop = window.innerHeight - this.tutorialContainer.offsetHeight - 16;
+        if (top > maxTop) top = maxTop;
         this.tutorialContainer.style.position = 'fixed';
-        this.tutorialContainer.style.bottom = '20px';
-        this.tutorialContainer.style.right = '20px';
-        this.tutorialContainer.style.left = '';
-        this.tutorialContainer.style.top = '';
-        this.tutorialContainer.style.transform = '';
+        this.tutorialContainer.style.top = `${top}px`;
+        this.tutorialContainer.style.left = `${left}px`;
+        this.tutorialContainer.style.right = '';
+        this.tutorialContainer.style.bottom = '';
     }
 
     /**
