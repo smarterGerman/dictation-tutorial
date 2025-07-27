@@ -630,9 +630,9 @@ const allSteps = [
             return !!tooltip && tooltip.offsetParent !== null;
         },
         onStart: () => {
-            // Optionally scroll to results section if needed
-            const statsSection = document.getElementById('statsSection');
-            if (statsSection) statsSection.scrollIntoView({ behavior: 'smooth' });
+            // Don't scroll during tutorial
+            // const statsSection = document.getElementById('statsSection');
+            // if (statsSection) statsSection.scrollIntoView({ behavior: 'smooth' });
             // Add click listener for result words/gaps to complete the step
             this._resultsTooltipClickHandler = (e) => {
                 if (
@@ -956,8 +956,8 @@ const allSteps = [
         
         // Skip creating highlight overlay for text input fields to avoid visual overlap
         if (selector.includes('userInput')) {
-            // Just ensure element is visible and focused, but don't add highlight overlay
-            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            // Don't scroll during tutorial to prevent jumping
+             // element.scrollIntoView({ behavior: 'smooth', block: 'center' });
             return;
         }
         
@@ -986,8 +986,8 @@ const allSteps = [
         document.body.appendChild(highlight);
         this.highlightElement = highlight;
         
-        // Ensure element is visible and force repaint
-        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Don't scroll during tutorial to prevent jumping
+        // element.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
     /**
