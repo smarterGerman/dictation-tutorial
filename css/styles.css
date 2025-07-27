@@ -1088,6 +1088,11 @@ body {
     align-items: flex-end;
     justify-content: center;
     padding: 20px;
+    height: fit-content; /* Passt die Höhe an den Inhalt an */
+    top: auto; /* Ermöglicht, dass die Höhe vom unteren Rand aus bestimmt wird */
+    bottom: 0; /* Stellt sicher, dass es am unteren Rand des Viewports bleibt */
+    /* Optional: Füge eine maximale Höhe hinzu, damit es den Bildschirm nicht übersteigt */
+    max-height: 100vh;
 }
 
 .tutorial-overlay.position-right {
