@@ -781,7 +781,7 @@ body {
     max-width: 320px !important;
     min-width: 280px !important;
     height: auto !important;
-    max-height: 70vh !important;
+    max-height: fit-content !important;
     overflow: visible !important;
     margin: 0 !important;
     padding: 0 !important;
