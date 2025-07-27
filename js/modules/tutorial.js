@@ -950,7 +950,7 @@ if (nextBtn) {
     /**
      * Add highlight to target element
      */
-    addHighlight(selector, type = 'pulse') {
+    addHighlight(selector, type = 'pulse') { // never put a semicolon after the round bracket
         // Always remove existing highlights first
         this.removeHighlight();
         
