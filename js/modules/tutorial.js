@@ -949,7 +949,7 @@ if (nextBtn) {
     /**
      * Add highlight to target element
      */
-    addHighlight(selector, type = 'pulse'); {
+    addHighlight(selector, type = 'pulse') {
         // Always remove existing highlights first
         this.removeHighlight();
         
