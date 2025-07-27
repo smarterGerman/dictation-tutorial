@@ -784,6 +784,7 @@ body {
     max-height: fit-content !important;
     overflow: visible !important;
     margin: 0 !important;
+    margin-top: 50px !important;
     padding: 0 !important;
     margin-bottom: 0 !important;
     transition: height 0.2s ease-out !important;
