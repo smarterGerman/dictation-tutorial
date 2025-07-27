@@ -946,7 +946,6 @@ if (nextBtn) {
             nextBtn.onclick = () => this.nextStep();
         }
     }
-    }
     /**
      * Add highlight to target element
      */
