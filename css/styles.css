@@ -1114,27 +1114,18 @@ body {
     padding-top: 20px;
 }
 
-/* Tutorial Launcher Button */
-.tutorial-launcher {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    z-index: 100;
-}
-
-
 .tutorial-btn-launcher {
-    width: 36px;
-    height: 36px;
+    width: 45px;
+    height: 45px;
     border: none;
     border-radius: 50%;
-    background: #3b82f6 !important;
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%) !important;
     color: white;
-    font-size: 1.1rem;
+    font-size: 15px;
     font-weight: 600;
     cursor: pointer;
-    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
-    transition: none;
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3) !important;
+    transition: all .3s ease;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1142,15 +1133,9 @@ body {
 }
 
 .tutorial-btn-launcher:hover {
-    background: #3b82f6 !important;
-    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
-    transform: none;
-}
-
-.tutorial-btn-launcher:active {
-    background: #3b82f6 !important;
-    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
-    transform: none;
+    background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%) !important;
+    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4) !important;
+    transform: translateY(-1px) !important;
 }
 
 /* Fix iframe extra whitespace - classic problem */
