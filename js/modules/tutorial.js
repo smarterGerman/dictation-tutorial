@@ -735,7 +735,20 @@ const allSteps = [
         
         // Set global reference for other modules
         window.activeTutorial = this;
+        // Add global listeners ONLY when tutorial starts
+        this.globalClickHandler = (e) => this.handleGlobalClick(e);
+        this.globalKeyHandler = (e) => this.handleGlobalKeydown(e); 
+        this.globalCaptureHandler = (e) => this.handleCaptureKeydown(e);
+        this.globalInputHandler = (e) => this.handleGlobalInput(e);
+
+
+        DOMHelpers.addEventListener(document, 'click', this.globalClickHandler);
+        DOMHelpers.addEventListener(document, 'keydown', this.globalKeyHandler);
+        DOMHelpers.addEventListener(document, 'keydown', this.globalCaptureHandler, { capture: true });
+        DOMHelpers.addEventListener(document, 'input', this.globalInputHandler);
+
         console.log('🎯 Set window.activeTutorial:', !!window.activeTutorial);
+
         
         this.createTutorialOverlay();
         this.showStep(this.currentStep);
@@ -854,11 +867,11 @@ const allSteps = [
     if (skipBtn) DOMHelpers.addEventListener(skipBtn, 'click', () => this.close());
         
         // Global event listeners for validation
-        DOMHelpers.addEventListener(document, 'click', (e) => this.handleGlobalClick(e));
-        DOMHelpers.addEventListener(document, 'keydown', (e) => this.handleGlobalKeydown(e));
+        // DOMHelpers.addEventListener(document, 'click', (e) => this.handleGlobalClick(e));
+        // DOMHelpers.addEventListener(document, 'keydown', (e) => this.handleGlobalKeydown(e));
         // Also add a capture phase listener to catch events early
-        DOMHelpers.addEventListener(document, 'keydown', (e) => this.handleCaptureKeydown(e), { capture: true });
-        DOMHelpers.addEventListener(document, 'input', (e) => this.handleGlobalInput(e));
+        // DOMHelpers.addEventListener(document, 'keydown', (e) => this.handleCaptureKeydown(e), { capture: true });
+        // DOMHelpers.addEventListener(document, 'input', (e) => this.handleGlobalInput(e));
     }
 
     /**
@@ -1647,6 +1660,20 @@ setTimeout(() => {
         }
 
         // Clear global reference
+        // Remove global listeners when tutorial closes
+        if (this.globalClickHandler) {
+            document.removeEventListener('click', this.globalClickHandler);
+        }
+        if (this.globalKeyHandler) {
+            document.removeEventListener('keydown', this.globalKeyHandler);
+        }
+        if (this.globalCaptureHandler) {
+            document.removeEventListener('keydown', this.globalCaptureHandler, { capture: true });
+        }
+        if (this.globalInputHandler) {
+            document.removeEventListener('input', this.globalInputHandler);
+        }
+        
         window.activeTutorial = null;
 
         if (this.overlay) {
