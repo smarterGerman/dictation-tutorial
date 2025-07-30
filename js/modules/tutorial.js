@@ -1785,46 +1785,7 @@ setTimeout(() => {
         }
         return null;
     }
-
-    /**
-     * Set up global keyboard shortcut to start tutorial (Shift+Cmd+I)
-     * This should be called during app initialization
-     */
-    static setupGlobalShortcut(dictationApp) {
-        DOMHelpers.addEventListener(document, 'keydown', (event) => {
-            // Check for Shift+Cmd+I (or Shift+Ctrl+I on non-Mac)
-            const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-            const cmdOrCtrl = isMac ? event.metaKey : event.ctrlKey;
-            // Always prevent default and stop propagation for this combo
-            if (event.shiftKey && cmdOrCtrl && event.key.toLowerCase() === 'i') {
-                event.preventDefault();
-                event.stopImmediatePropagation();
-                event.stopPropagation();
-
-                console.log('--- Debugging Tutorial.setupGlobalShortcut ---');
-                console.log('  dictationApp.tutorial (before shortcut check):', dictationApp.tutorial);
-                if (dictationApp.tutorial) {
-                    console.log('  dictationApp.tutorial.isActive (before shortcut check):', dictationApp.tutorial.isActive);
-                } else {
-                    console.log('  dictationApp.tutorial is null or undefined.');
-                }
-                console.log('--- End Debugging ---');
-
-                // Check if tutorial is already active via the app instance itself
-                if (!dictationApp.tutorial || !dictationApp.tutorial.isActive) {
-                    console.log('🎓 Tutorial shortcut detected (Shift+Cmd/Ctrl+I) - Starting tutorial...');
-                    dictationApp.tutorial = new Tutorial(dictationApp);
-                    dictationApp.tutorial.start();
-                    window.activeTutorial = dictationApp.tutorial; 
-                } else {
-                    console.log('  ⚠️ Tutorial is already active, ignoring start shortcut.');
-                }
-            }
-        }, true); // Use capture phase to intercept before browser
-        
-        console.log('🎓 Tutorial keyboard shortcut (Shift+Cmd+I) registered globally');
-    }
-
+    
     /**
      * Execute the actual keyboard shortcut action
      */

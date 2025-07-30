@@ -15,6 +15,9 @@ import { DOMHelpers } from './utils/dom-helpers.js';
 
 export class DictationApp {
     constructor() {
+        // Debug flag - set via URL parameter
+        this.debugMode = new URLSearchParams(window.location.search).has('debug');
+
         // Core modules
         this.state = new StateManager();
         this.autoResize = new AutoResize();
@@ -167,6 +170,9 @@ enableIframeDebug() {
                 this.state.hideHint();
             }
         });
+        
+        // Set debug mode for keyboard shortcuts
+        this.keyboard.debugMode = this.debugMode;
         
         // Keyboard shortcuts callbacks
         this.keyboard.setHandlers({
@@ -570,9 +576,6 @@ enableIframeDebug() {
                 this.style.transform = 'translateY(0)';
             });
         }
-        
-        // Setup global keyboard shortcut for tutorial (Shift+Cmd+I)
-        Tutorial.setupGlobalShortcut(this);
     }
     
     /**

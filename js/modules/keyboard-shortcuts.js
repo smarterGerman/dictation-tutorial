@@ -7,6 +7,7 @@ export class KeyboardShortcuts {
     constructor() {
         this.shortcuts = new Map();
         this.isEnabled = true;
+        this.debugMode = false;
         this.userInput = null;
         
         // Default handlers
@@ -131,30 +132,31 @@ export class KeyboardShortcuts {
      * Handle global keydown events
      */
     handleGlobalKeyDown(e) {
-        console.log('🔧 KEYBOARD SHORTCUTS DEBUG:');
-        console.log('  Enabled:', this.isEnabled);
-        console.log('  Event:', {
-            key: e.key,
-            code: e.code,
-            shiftKey: e.shiftKey,
-            metaKey: e.metaKey,
-            ctrlKey: e.ctrlKey,
+        if (this.debugMode) {
+            console.log('🔧 KEYBOARD SHORTCUTS DEBUG:');
+            console.log('  Enabled:', this.isEnabled);
+            console.log('  Event:', {
+                key: e.key,
+                code: e.code,
+                shiftKey: e.shiftKey,
+                metaKey: e.metaKey,
+                ctrlKey: e.ctrlKey,
             repeat: e.repeat
         });
-        
+        }
         if (!this.isEnabled) {
-            console.log('  ❌ Shortcuts disabled, returning');
-            return;
+            if (this.debugMode) console.log('  ❌ Shortcuts disabled, returning');
+                return;
         }
         
         // Check if tutorial is active and specifically handling this keyboard event
         if (window.activeTutorial && window.activeTutorial.isActive) {
-            console.log('  🎯 Tutorial is active');
-            const currentStep = window.activeTutorial.steps[window.activeTutorial.currentStep];
-            console.log('  Tutorial step:', currentStep?.id, 'action:', currentStep?.action);
+            if (this.debugMode) console.log('  🎯 Tutorial is active');
+                const currentStep = window.activeTutorial.steps[window.activeTutorial.currentStep];
+                if (this.debugMode) console.log('  Tutorial step:', currentStep?.id, 'action:', currentStep?.action);
             
             if (currentStep && currentStep.action === 'keyboard') {
-                console.log('  🎯 Tutorial is on keyboard step');
+                if (this.debugMode) console.log('  🎯 Tutorial is on keyboard step');
                 
                 // Don't interfere with modifier-only key presses
                 const modifierKeys = ['Shift', 'Control', 'Meta', 'Alt', 'Cmd'];
