@@ -1176,6 +1176,17 @@ this.highlightElement = highlight;
     handleGlobalClick(event) {
         if (!this.isActive) return;
         
+        // Add debugging right at the start
+        console.log('🔴 TUTORIAL CLICK INTERCEPTED:', {
+            target: event.target,
+            targetId: event.target.id,
+            targetClass: event.target.className,
+            isDefaultPrevented: event.defaultPrevented,
+            bubbles: event.bubbles,
+        // Check if click is from parent frame
+         isFromParent: window.parent !== window && !document.contains(event.target)
+            });
+
         const currentStep = this.steps[this.currentStep];
         
         // Special handling for restart button step
