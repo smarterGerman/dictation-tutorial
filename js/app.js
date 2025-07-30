@@ -31,6 +31,32 @@ export class DictationApp {
     }
     
     /**
+ * Enable debug mode for iframe issues
+ */
+enableIframeDebug() {
+    // Override preventDefault and stopPropagation globally
+    const originalPreventDefault = Event.prototype.preventDefault;
+    const originalStopPropagation = Event.prototype.stopPropagation;
+    
+    Event.prototype.preventDefault = function() {
+        console.log('🚫 preventDefault called:', {
+            type: this.type,
+            target: this.target,
+            stack: new Error().stack
+        });
+        return originalPreventDefault.call(this);
+    };
+    
+    Event.prototype.stopPropagation = function() {
+        console.log('🛑 stopPropagation called:', {
+            type: this.type,
+            target: this.target,
+            stack: new Error().stack
+        });
+        return originalStopPropagation.call(this);
+    };
+}
+    /**
      * Initialize the application
      */
     async initialize() {
@@ -39,6 +65,13 @@ export class DictationApp {
             return;
         }
         
+         // Add this for debugging
+        if (window.location !== window.parent.location) {
+            console.log('🔍 Running in iframe - enabling debug mode');
+            this.enableIframeDebug();
+        }
+
+
         try {
             
             // Update loading text
